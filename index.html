@@ -1,0 +1,4293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduSlides - Professional Presentation Templates for Education</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --primary-light: #dbeafe;
+            --secondary: #64748b;
+            --text: #1e293b;
+            --text-light: #64748b;
+            --bg: #ffffff;
+            --bg-light: #f8fafc;
+            --border: #e2e8f0;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --purple: #8b5cf6;
+            --pink: #ec4899;
+            --radius: 16px;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            color: var(--text);
+            background: var(--bg);
+            line-height: 1.6;
+        }
+
+        /* Header */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border);
+            z-index: 1000;
+        }
+
+        .header-container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 24px;
+            height: 72px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .logo i {
+            font-size: 28px;
+        }
+
+        nav {
+            display: flex;
+            gap: 40px;
+        }
+
+        nav a {
+            color: var(--text);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 15px;
+            transition: color 0.2s;
+        }
+
+        nav a:hover {
+            color: var(--primary);
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .search-box {
+            position: relative;
+        }
+
+        .search-box input {
+            width: 240px;
+            padding: 10px 16px 10px 40px;
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .search-box input:focus {
+            border-color: var(--primary);
+            width: 280px;
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-light);
+        }
+
+        .search-dropdown {
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 0;
+            right: 0;
+            background: white;
+            border-radius: 16px;
+            box-shadow: var(--shadow-lg);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.2s;
+            max-height: 480px;
+            overflow-y: auto;
+            z-index: 100;
+        }
+
+        .search-dropdown.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .search-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            font-size: 13px;
+            color: var(--text-light);
+            font-weight: 500;
+        }
+
+        .search-result-item {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 14px 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .search-result-item:last-child {
+            border-bottom: none;
+        }
+
+        .search-result-item:hover {
+            background: var(--bg-light);
+        }
+
+        .search-result-thumb {
+            width: 64px;
+            height: 40px;
+            border-radius: 8px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .search-result-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .search-result-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .search-result-meta {
+            font-size: 13px;
+            color: var(--text-light);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .search-result-category {
+            display: inline-block;
+            padding: 2px 8px;
+            background: var(--primary-light);
+            color: var(--primary);
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .search-result-rating {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            color: #f59e0b;
+        }
+
+        .search-empty {
+            padding: 40px 20px;
+            text-align: center;
+            color: var(--text-light);
+        }
+
+        .search-empty i {
+            font-size: 48px;
+            margin-bottom: 16px;
+            color: var(--border);
+        }
+
+        .search-empty p {
+            font-size: 15px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-light);
+        }
+
+        .btn-large {
+            padding: 14px 28px;
+            font-size: 16px;
+        }
+
+        .btn-full {
+            width: 100%;
+        }
+
+        /* Hero Section */
+        .hero {
+            margin-top: 72px;
+            padding: 100px 24px 80px;
+            background: linear-gradient(135deg, var(--primary-light) 0%, #ffffff 50%, #f0fdf4 100%);
+            text-align: center;
+        }
+
+        .hero-content {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .hero h1 {
+            font-size: 52px;
+            font-weight: 700;
+            line-height: 1.15;
+            margin-bottom: 20px;
+            color: var(--text);
+        }
+
+        .hero h1 span {
+            color: var(--primary);
+        }
+
+        .hero p {
+            font-size: 20px;
+            color: var(--text-light);
+            margin-bottom: 40px;
+            line-height: 1.6;
+        }
+
+        .hero-actions {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            margin-bottom: 60px;
+        }
+
+        .hero-actions .btn {
+            padding: 14px 28px;
+            font-size: 16px;
+        }
+
+        .hero-stats {
+            display: flex;
+            justify-content: center;
+            gap: 60px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 36px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: var(--text-light);
+            margin-top: 4px;
+        }
+
+        /* Categories - Main Scenarios */
+        .categories {
+            padding: 80px 24px;
+            background: var(--bg);
+        }
+
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+
+        .section-header h2 {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .section-header p {
+            font-size: 18px;
+            color: var(--text-light);
+        }
+
+        /* Category Grid - 5 Main Categories */
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 24px;
+        }
+
+        .category-card {
+            padding: 36px 24px;
+            border: 2px solid var(--border);
+            border-radius: var(--radius);
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: var(--bg);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .category-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--primary);
+            transform: scaleX(0);
+            transition: transform 0.3s;
+        }
+
+        .category-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .category-card:hover {
+            border-color: var(--primary);
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-6px);
+        }
+
+        .category-icon {
+            width: 72px;
+            height: 72px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 32px;
+            transition: transform 0.3s;
+        }
+
+        .category-card:hover .category-icon {
+            transform: scale(1.1);
+        }
+
+        .category-card:nth-child(1) .category-icon {
+            background: #dbeafe;
+            color: #2563eb;
+        }
+
+        .category-card:nth-child(2) .category-icon {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+
+        .category-card:nth-child(3) .category-icon {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        .category-card:nth-child(4) .category-icon {
+            background: #f3e8ff;
+            color: #9333ea;
+        }
+
+        .category-card:nth-child(5) .category-icon {
+            background: #fce7f3;
+            color: #db2777;
+        }
+
+        .category-card h3 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .category-card p {
+            font-size: 14px;
+            color: var(--text-light);
+            line-height: 1.5;
+        }
+
+        .category-count {
+            display: inline-block;
+            margin-top: 12px;
+            padding: 4px 14px;
+            background: var(--bg-light);
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        /* Sub Categories */
+        .sub-categories {
+            padding: 60px 24px;
+            background: var(--bg-light);
+        }
+
+        .sub-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 16px;
+        }
+
+        .sub-item {
+            padding: 20px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .sub-item:hover {
+            border-color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .sub-item i {
+            font-size: 24px;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+
+        .sub-item span {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        /* Templates Section */
+        .templates {
+            padding: 80px 24px;
+            background: var(--bg);
+        }
+
+        .filter-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .filter-tabs {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .filter-tab {
+            padding: 8px 18px;
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            background: var(--bg);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-tab:hover,
+        .filter-tab.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .sort-select {
+            padding: 10px 18px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+            background: var(--bg);
+            cursor: pointer;
+        }
+
+        .template-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 28px;
+        }
+
+        .template-card {
+            background: var(--bg);
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.3s;
+            border: 1px solid var(--border);
+        }
+
+        .template-card:hover {
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-6px);
+            border-color: transparent;
+        }
+
+        .template-preview {
+            position: relative;
+            aspect-ratio: 16/10;
+            overflow: hidden;
+        }
+
+        .template-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .template-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .template-card:hover .template-overlay {
+            opacity: 1;
+        }
+
+        .overlay-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: white;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 18px;
+        }
+
+        .overlay-btn:hover {
+            transform: scale(1.1);
+            background: var(--primary);
+            color: white;
+        }
+
+        .template-badges {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .template-badge {
+            padding: 4px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            border-radius: 20px;
+        }
+
+        .badge-free {
+            background: var(--success);
+            color: white;
+        }
+
+        .badge-new {
+            background: var(--primary);
+            color: white;
+        }
+
+        .badge-hot {
+            background: var(--warning);
+            color: white;
+        }
+
+        .template-info {
+            padding: 20px;
+        }
+
+        .template-tag {
+            display: inline-block;
+            padding: 2px 10px;
+            background: var(--bg-light);
+            border-radius: 4px;
+            font-size: 12px;
+            color: var(--text-light);
+            margin-bottom: 8px;
+        }
+
+        .template-info h3 {
+            font-size: 17px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .template-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+            color: var(--text-light);
+        }
+
+        .template-rating {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            color: #f59e0b;
+        }
+
+        .template-stats {
+            display: flex;
+            gap: 16px;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+            font-size: 13px;
+            color: var(--text-light);
+        }
+
+        .template-stats span {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .template-stats i {
+            font-size: 12px;
+        }
+
+        .stat-views {
+            color: #64748b;
+        }
+
+        .stat-downloads {
+            color: var(--success);
+        }
+
+        /* Template Preview Modal */
+        .preview-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+            z-index: 3000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+
+        .preview-modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .preview-modal {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            z-index: 3001;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+
+        .preview-modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .preview-top-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 64px;
+            background: rgba(30, 41, 59, 0.95);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            z-index: 10;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .preview-back-btn {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .preview-back-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .preview-breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 14px;
+        }
+
+        .breadcrumb-separator {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .breadcrumb-current {
+            color: white;
+            font-weight: 600;
+            max-width: 300px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .preview-modal-close {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.2s;
+        }
+
+        .preview-modal-close:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .preview-content {
+            display: flex;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Left: Preview Area */
+        .preview-left {
+            flex: 1;
+            padding: 40px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .preview-slides {
+            width: 100%;
+            max-width: 800px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            padding-bottom: 40px;
+        }
+
+        .preview-slide {
+            width: 100%;
+            aspect-ratio: 16/9;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            position: relative;
+        }
+
+        .preview-slide img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .slide-number {
+            position: absolute;
+            bottom: 16px;
+            right: 16px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .preview-nav {
+            position: fixed;
+            left: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .preview-nav-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.2s;
+        }
+
+        .preview-nav-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Right: Sidebar */
+        .preview-sidebar {
+            width: 400px;
+            background: var(--bg);
+            padding: 32px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            border-left: 1px solid var(--border);
+        }
+
+        .sidebar-header {
+            margin-bottom: 24px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .sidebar-category {
+            display: inline-block;
+            background: var(--primary-light);
+            color: var(--primary);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .sidebar-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            line-height: 1.3;
+        }
+
+        .sidebar-rating {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .stars {
+            display: flex;
+            gap: 4px;
+            color: #f59e0b;
+        }
+
+        .rating-text {
+            font-size: 14px;
+            color: var(--text-light);
+        }
+
+        .sidebar-stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px 20px;
+            font-size: 14px;
+            color: var(--text-light);
+        }
+
+        .sidebar-stats span {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .sidebar-section {
+            margin-bottom: 24px;
+        }
+
+        .sidebar-section-title {
+            font-size: 14px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-light);
+            margin-bottom: 12px;
+        }
+
+        .sidebar-text {
+            font-size: 15px;
+            color: var(--text);
+            line-height: 1.7;
+        }
+
+        .sidebar-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .sidebar-tag {
+            padding: 6px 14px;
+            background: var(--bg-light);
+            border-radius: 20px;
+            font-size: 13px;
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .sidebar-info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .info-item {
+            padding: 16px;
+            background: var(--bg-light);
+            border-radius: 12px;
+        }
+
+        .info-label {
+            font-size: 12px;
+            color: var(--text-light);
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .info-value {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .sidebar-actions {
+            margin-top: auto;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+        }
+
+        .price-display {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .price-current {
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--primary);
+        }
+
+        .price-original {
+            font-size: 18px;
+            color: #94a3b8;
+            text-decoration: line-through;
+        }
+
+        .sidebar-btn {
+            width: 100%;
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .sidebar-btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .sidebar-btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .sidebar-btn-secondary {
+            background: var(--bg-light);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .sidebar-btn-secondary:hover {
+            background: var(--border);
+        }
+
+        .sidebar-guarantee {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--text-light);
+            margin-top: 12px;
+        }
+
+        .sidebar-guarantee i {
+            color: var(--success);
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+            padding: 20px;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: var(--bg);
+            border-radius: 24px;
+            max-width: 900px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 40px;
+            position: relative;
+            transform: scale(0.9) translateY(20px);
+            transition: transform 0.3s;
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: scale(1) translateY(0);
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 18px;
+            color: var(--text-light);
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover {
+            background: var(--bg-light);
+            color: var(--text);
+        }
+
+        .modal-header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .modal-header h2 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .modal-header p {
+            font-size: 16px;
+            color: var(--text-light);
+        }
+
+        .template-name {
+            display: inline-block;
+            background: var(--primary-light);
+            color: var(--primary);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        /* Modal Top Navigation */
+        .modal-top-nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 0;
+            margin: -40px -40px 0;
+            padding: 16px 40px;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg);
+            position: sticky;
+            top: -40px;
+            z-index: 10;
+        }
+
+        .modal-nav-back {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .modal-nav-back:hover {
+            background: var(--bg-light);
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .modal-nav-steps {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .nav-step {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-light);
+            font-size: 14px;
+        }
+
+        .nav-step.active {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .nav-step.completed {
+            color: var(--success);
+        }
+
+        .step-number {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--bg-light);
+            border: 2px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .nav-step.active .step-number {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        .nav-step.completed .step-number {
+            background: var(--success);
+            border-color: var(--success);
+            color: white;
+        }
+
+        .step-line {
+            width: 40px;
+            height: 2px;
+            background: var(--border);
+        }
+
+        .step-line.active {
+            background: var(--primary);
+        }
+
+        .back-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            padding: 8px 16px;
+            border: none;
+            background: transparent;
+            color: var(--text-light);
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .back-btn:hover {
+            background: var(--bg-light);
+            color: var(--text);
+        }
+
+        /* Pricing Cards */
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        .pricing-card {
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            padding: 28px 24px;
+            text-align: center;
+            position: relative;
+            transition: all 0.3s;
+            background: var(--bg);
+        }
+
+        .pricing-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .pricing-card.popular {
+            border-color: var(--primary);
+            background: linear-gradient(180deg, var(--primary-light) 0%, var(--bg) 100%);
+        }
+
+        .pricing-card.popular::before {
+            content: 'MOST POPULAR';
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--primary);
+            color: white;
+            padding: 4px 16px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .pricing-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+            font-size: 24px;
+        }
+
+        .pricing-card:nth-child(1) .pricing-icon {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        .pricing-card:nth-child(2) .pricing-icon {
+            background: #dbeafe;
+            color: #2563eb;
+        }
+
+        .pricing-card:nth-child(3) .pricing-icon {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+
+        .pricing-name {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .pricing-desc {
+            font-size: 13px;
+            color: var(--text-light);
+            margin-bottom: 16px;
+        }
+
+        .pricing-price {
+            margin-bottom: 20px;
+        }
+
+        .price-amount {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--text);
+            line-height: 1;
+        }
+
+        .price-currency {
+            font-size: 20px;
+            vertical-align: top;
+            margin-right: 2px;
+        }
+
+        .price-period {
+            font-size: 14px;
+            color: var(--text-light);
+        }
+
+        .price-original {
+            font-size: 14px;
+            color: #94a3b8;
+            text-decoration: line-through;
+            margin-top: 4px;
+        }
+
+        .price-save {
+            display: inline-block;
+            background: var(--success);
+            color: white;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 8px;
+        }
+
+        .pricing-features {
+            text-align: left;
+            margin-bottom: 20px;
+        }
+
+        .pricing-features li {
+            list-style: none;
+            padding: 8px 0;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .pricing-features li:last-child {
+            border-bottom: none;
+        }
+
+        .pricing-features i {
+            color: var(--success);
+            font-size: 14px;
+        }
+
+        .btn-buy {
+            width: 100%;
+            padding: 14px;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+
+        .btn-buy-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-buy-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-buy-secondary {
+            background: var(--bg-light);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .btn-buy-secondary:hover {
+            background: var(--border);
+        }
+
+        .pricing-guarantee {
+            text-align: center;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+        }
+
+        .pricing-guarantee p {
+            font-size: 13px;
+            color: var(--text-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .pricing-guarantee i {
+            color: var(--success);
+        }
+
+        /* Payment Methods */
+        .payment-methods {
+            max-width: 560px;
+            margin: 0 auto;
+        }
+
+        .order-summary {
+            background: var(--bg-light);
+            border-radius: 16px;
+            padding: 20px 24px;
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .order-summary .label {
+            font-size: 14px;
+            color: var(--text-light);
+        }
+
+        .order-summary .plan-name {
+            font-size: 16px;
+            font-weight: 600;
+            margin-top: 2px;
+        }
+
+        .order-summary .price {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .payment-options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .payment-option {
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 16px 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .payment-option:hover {
+            border-color: var(--primary-light);
+        }
+
+        .payment-option.active {
+            border-color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .payment-option-radio {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .payment-option.active .payment-option-radio {
+            border-color: var(--primary);
+        }
+
+        .payment-option-radio::after {
+            content: '';
+            width: 10px;
+            height: 10px;
+            background: var(--primary);
+            border-radius: 50%;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .payment-option.active .payment-option-radio::after {
+            opacity: 1;
+        }
+
+        .payment-option-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            flex-shrink: 0;
+        }
+
+        .payment-option-icon.card {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        .payment-option-icon.paypal {
+            background: #dbeafe;
+            color: #2563eb;
+        }
+
+        .payment-option-icon.google {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+
+        .payment-option-icon.alipay {
+            background: #dbeafe;
+            color: #1677ff;
+        }
+
+        .payment-option-icon.wechat {
+            background: #dcfce7;
+            color: #07c160;
+        }
+
+        .payment-option-info {
+            flex: 1;
+        }
+
+        .payment-option-name {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .payment-option-desc {
+            font-size: 13px;
+            color: var(--text-light);
+        }
+
+        .payment-option-logos {
+            display: flex;
+            gap: 6px;
+        }
+
+        .payment-logo {
+            width: 32px;
+            height: 20px;
+            background: white;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+            border: 1px solid var(--border);
+        }
+
+        .payment-logo.visa {
+            color: #1a1f71;
+        }
+
+        .payment-logo.mastercard {
+            color: #eb001b;
+        }
+
+        .payment-logo.amex {
+            color: #006fcf;
+        }
+
+        /* Credit Card Form */
+        .card-form {
+            background: var(--bg-light);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 16px;
+            display: none;
+        }
+
+        .card-form.active {
+            display: block;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: var(--text);
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 15px;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .form-group input::placeholder {
+            color: #94a3b8;
+        }
+
+        .btn-pay {
+            width: 100%;
+            padding: 16px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 8px;
+        }
+
+        .btn-pay:hover {
+            background: var(--primary-dark);
+        }
+
+        .secure-note {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 16px;
+            font-size: 13px;
+            color: var(--text-light);
+        }
+
+        .secure-note i {
+            color: var(--success);
+        }
+
+        /* Auth Modal Styles */
+        .auth-container {
+            padding: 20px 0;
+        }
+
+        .auth-header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .auth-logo {
+            width: 72px;
+            height: 72px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 36px;
+            color: white;
+        }
+
+        .auth-header h2 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .auth-header p {
+            font-size: 15px;
+            color: var(--text-light);
+        }
+
+        .auth-social {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .auth-social-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            padding: 14px 24px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--text);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .auth-social-btn:hover {
+            background: var(--bg-light);
+            border-color: var(--primary);
+            transform: translateY(-1px);
+        }
+
+        .auth-social-btn i {
+            font-size: 20px;
+            width: 24px;
+            text-align: center;
+        }
+
+        .auth-social-btn.google i {
+            color: #ea4335;
+        }
+
+        .auth-social-btn.facebook i {
+            color: #1877f2;
+        }
+
+        .auth-social-btn.apple i {
+            color: #000000;
+        }
+
+        .auth-social-btn.microsoft i {
+            color: #00a4ef;
+        }
+
+        .auth-divider {
+            position: relative;
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .auth-divider::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: var(--border);
+        }
+
+        .auth-divider span {
+            position: relative;
+            background: var(--bg);
+            padding: 0 16px;
+            font-size: 14px;
+            color: var(--text-light);
+        }
+
+        .auth-form {
+            margin-bottom: 24px;
+        }
+
+        .auth-form .form-group {
+            margin-bottom: 16px;
+        }
+
+        .auth-form .form-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 6px;
+            color: var(--text);
+        }
+
+        .auth-form .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 15px;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+
+        .auth-form .form-group input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-light);
+        }
+
+        .auth-options {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .remember-me {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            color: var(--text);
+        }
+
+        .remember-me input {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--primary);
+        }
+
+        .forgot-link {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .forgot-link:hover {
+            text-decoration: underline;
+        }
+
+        .auth-submit-btn {
+            width: 100%;
+            padding: 14px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .auth-submit-btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .auth-footer {
+            text-align: center;
+            font-size: 15px;
+            color: var(--text-light);
+            margin-bottom: 20px;
+        }
+
+        .auth-footer a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .auth-footer a:hover {
+            text-decoration: underline;
+        }
+
+        .auth-terms {
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-light);
+            line-height: 1.6;
+        }
+
+        .auth-terms a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .auth-terms a:hover {
+            text-decoration: underline;
+        }
+
+        /* Toast Notification */
+        .toast-notification {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: var(--text);
+            color: white;
+            padding: 16px 28px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 500;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            z-index: 5000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+            max-width: 90vw;
+            text-align: center;
+        }
+
+        .toast-notification.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* Features */
+        .features {
+            padding: 100px 24px;
+            background: var(--bg-light);
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 40px;
+        }
+
+        .feature-item {
+            text-align: center;
+            padding: 32px;
+            background: var(--bg);
+            border-radius: var(--radius);
+            transition: all 0.3s;
+        }
+
+        .feature-item:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow);
+        }
+
+        .feature-icon {
+            width: 72px;
+            height: 72px;
+            background: var(--primary-light);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 24px;
+            font-size: 32px;
+            color: var(--primary);
+        }
+
+        .feature-item h3 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .feature-item p {
+            font-size: 15px;
+            color: var(--text-light);
+            line-height: 1.7;
+        }
+
+        /* CTA Section */
+        .cta {
+            padding: 100px 24px;
+            background: linear-gradient(135deg, var(--primary) 0%, #1e40af 100%);
+            text-align: center;
+        }
+
+        .cta h2 {
+            font-size: 40px;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 16px;
+        }
+
+        .cta p {
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 32px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .cta .btn {
+            padding: 16px 36px;
+            font-size: 16px;
+            background: white;
+            color: var(--primary);
+        }
+
+        .cta .btn:hover {
+            background: var(--bg-light);
+            transform: translateY(-2px);
+        }
+
+        /* Footer */
+        footer {
+            background: var(--text);
+            color: white;
+            padding: 64px 24px 32px;
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 2fr repeat(3, 1fr);
+            gap: 48px;
+            max-width: 1280px;
+            margin: 0 auto 48px;
+        }
+
+        .footer-brand .logo {
+            color: white;
+            margin-bottom: 16px;
+        }
+
+        .footer-brand p {
+            color: #94a3b8;
+            font-size: 15px;
+            line-height: 1.7;
+        }
+
+        .footer-links h4 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .footer-links ul {
+            list-style: none;
+        }
+
+        .footer-links li {
+            margin-bottom: 12px;
+        }
+
+        .footer-links a {
+            color: #94a3b8;
+            text-decoration: none;
+            font-size: 14px;
+            transition: all 0.2s;
+            cursor: pointer;
+            display: inline-block;
+        }
+
+        .footer-links a:hover {
+            color: white;
+            transform: translateX(4px);
+        }
+
+        .footer-bottom {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding-top: 32px;
+            border-top: 1px solid #334155;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+            color: #94a3b8;
+        }
+
+        .footer-social {
+            display: flex;
+            gap: 16px;
+        }
+
+        .footer-social a {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #334155;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .footer-social a:hover {
+            background: var(--primary);
+        }
+
+        /* Mobile Menu */
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        /* Consult Widget */
+        .consult-widget {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 1500;
+        }
+
+        .consult-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #25d366 0%, #128c7e 100%);
+            border: none;
+            color: white;
+            font-size: 28px;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(37, 211, 102, 0.4);
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .consult-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 30px rgba(37, 211, 102, 0.5);
+        }
+
+        .consult-btn.active {
+            background: #64748b;
+            box-shadow: 0 4px 20px rgba(100, 116, 139, 0.4);
+        }
+
+        .consult-panel {
+            position: absolute;
+            bottom: 75px;
+            right: 0;
+            width: 320px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(20px) scale(0.95);
+            transition: all 0.3s;
+            overflow: hidden;
+        }
+
+        .consult-panel.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0) scale(1);
+        }
+
+        .consult-header {
+            background: linear-gradient(135deg, #25d366 0%, #128c7e 100%);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .consult-header h4 {
+            font-size: 18px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .consult-header h4 i {
+            font-size: 24px;
+        }
+
+        .consult-close {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .consult-close:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .consult-content {
+            padding: 20px;
+        }
+
+        .consult-item {
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+        }
+
+        .consult-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            flex-shrink: 0;
+        }
+
+        .consult-icon.whatsapp {
+            background: #dcfce7;
+            color: #25d366;
+        }
+
+        .consult-icon.phone {
+            background: #dbeafe;
+            color: #2563eb;
+        }
+
+        .consult-icon.email {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        .consult-info {
+            flex: 1;
+        }
+
+        .consult-label {
+            font-size: 12px;
+            color: var(--text-light);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+
+        .consult-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 8px;
+        }
+
+        .consult-qr {
+            margin-top: 8px;
+        }
+
+        .qr-code {
+            width: 100px;
+            height: 100px;
+            background: var(--bg-light);
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            color: var(--text-light);
+            font-size: 12px;
+        }
+
+        .qr-code i {
+            font-size: 40px;
+            color: var(--text);
+        }
+
+        .consult-hours {
+            font-size: 13px;
+            color: var(--text-light);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .consult-divider {
+            height: 1px;
+            background: var(--border);
+            margin: 16px 0;
+        }
+
+        .consult-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            width: 20px;
+            height: 20px;
+            background: #ef4444;
+            border-radius: 50%;
+            border: 2px solid white;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .pricing-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .pricing-card.popular {
+                order: -1;
+            }
+
+            .footer-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .preview-sidebar {
+                width: 350px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .auth-social-btn span {
+                font-size: 14px;
+            }
+
+            .auth-options {
+                flex-direction: column;
+                gap: 12px;
+                align-items: flex-start;
+            }
+
+            nav {
+                display: none;
+            }
+
+            .mobile-menu-btn {
+                display: block;
+            }
+
+            .search-box {
+                display: none;
+            }
+
+            .hero h1 {
+                font-size: 32px;
+            }
+
+            .hero p {
+                font-size: 17px;
+            }
+
+            .hero-actions {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .hero-stats {
+                flex-direction: column;
+                gap: 24px;
+            }
+
+            .category-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .modal-content {
+                padding: 24px 20px;
+            }
+
+            .modal-header h2 {
+                font-size: 22px;
+            }
+
+            .footer-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .footer-bottom {
+                flex-direction: column;
+                gap: 16px;
+                text-align: center;
+            }
+
+            .payment-option {
+                padding: 14px 16px;
+            }
+
+            .payment-option-icon {
+                width: 40px;
+                height: 40px;
+                font-size: 18px;
+            }
+
+            .payment-option-name {
+                font-size: 14px;
+            }
+
+            .payment-option-desc {
+                font-size: 12px;
+            }
+
+            .preview-content {
+                flex-direction: column;
+            }
+
+            .preview-top-nav {
+                padding: 0 16px;
+                height: 56px;
+            }
+
+            .preview-back-btn span {
+                display: none;
+            }
+
+            .preview-back-btn {
+                padding: 10px;
+            }
+
+            .preview-breadcrumb {
+                font-size: 12px;
+                gap: 8px;
+            }
+
+            .breadcrumb-current {
+                max-width: 120px;
+            }
+
+            .preview-left {
+                padding: 72px 16px 16px;
+            }
+
+            .preview-sidebar {
+                width: 100%;
+                max-height: 50vh;
+                border-left: none;
+                border-top: 1px solid var(--border);
+            }
+
+            .preview-nav {
+                display: none;
+            }
+
+            .modal-top-nav {
+                margin: -24px -20px 0;
+                padding: 12px 20px;
+                flex-wrap: wrap;
+                gap: 12px;
+            }
+
+            .modal-nav-back span {
+                display: none;
+            }
+
+            .modal-nav-back {
+                padding: 8px 12px;
+            }
+
+            .modal-nav-steps {
+                order: 3;
+                width: 100%;
+                justify-content: center;
+            }
+
+            .step-line {
+                width: 20px;
+            }
+
+            .step-label {
+                display: none;
+            }
+
+            .consult-widget {
+                bottom: 20px;
+                right: 20px;
+            }
+
+            .consult-btn {
+                width: 52px;
+                height: 52px;
+                font-size: 24px;
+            }
+
+            .consult-panel {
+                width: calc(100vw - 40px);
+                max-width: 320px;
+                right: -10px;
+            }
+
+            .consult-panel::after {
+                content: '';
+                position: absolute;
+                bottom: -10px;
+                right: 25px;
+                width: 20px;
+                height: 20px;
+                background: white;
+                transform: rotate(45deg);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="header-container">
+            <a href="#" class="logo">
+                <i class="fas fa-graduation-cap"></i>
+                EduSlides
+            </a>
+            <nav>
+                <a href="#" onclick="scrollToSection('categories'); return false;">Categories</a>
+                <a href="#" onclick="scrollToSection('templates'); return false;">Templates</a>
+                <a href="#" onclick="scrollToSection('features'); return false;">Features</a>
+                <a href="#" onclick="showPageInfo('Pricing'); return false;">Pricing</a>
+            </nav>
+            <div class="header-actions">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="searchInput" placeholder="Search templates..." autocomplete="off">
+                    <div class="search-dropdown" id="searchDropdown">
+                        <div class="search-results" id="searchResults"></div>
+                    </div>
+                </div>
+                <button class="btn btn-secondary" onclick="openAuthModal()">Sign In</button>
+                <button class="btn btn-primary" onclick="openAuthModal()">Get Started</button>
+            </div>
+            <button class="mobile-menu-btn">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Professional Presentation Templates <span>for Every Need</span></h1>
+            <p>From academic defense to teaching slides, find the perfect template for any presentation scenario. Trusted by educators and students worldwide.</p>
+            <div class="hero-actions">
+                <button class="btn btn-primary" onclick="openAuthModal()">
+                    <i class="fas fa-rocket"></i>
+                    Get Started Free
+                </button>
+                <button class="btn btn-secondary">
+                    <i class="fas fa-play-circle"></i>
+                    Watch Demo
+                </button>
+            </div>
+            <div class="hero-stats">
+                <div class="stat-item">
+                    <div class="stat-number">8,000+</div>
+                    <div class="stat-label">Templates</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">15,000+</div>
+                    <div class="stat-label">Users</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">5</div>
+                    <div class="stat-label">Categories</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Categories -->
+    <section class="categories" id="categories">
+        <div class="container">
+            <div class="section-header">
+                <h2>Browse by Category</h2>
+                <p>Choose the template type that matches your presentation needs</p>
+            </div>
+            <div class="category-grid">
+                <!-- 学术答辩 -->
+                <div class="category-card">
+                    <div class="category-icon">
+                        <i class="fas fa-user-graduate"></i>
+                    </div>
+                    <h3>Academic Defense</h3>
+                    <p>Professional templates for thesis defense, dissertation presentations, and academic conferences</p>
+                    <span class="category-count">1,200+ templates</span>
+                </div>
+                <!-- 工作汇报 -->
+                <div class="category-card">
+                    <div class="category-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <h3>Work Reports</h3>
+                    <p>Business presentations for project updates, quarterly reviews, and strategic planning meetings</p>
+                    <span class="category-count">2,100+ templates</span>
+                </div>
+                <!-- 教学课件 -->
+                <div class="category-card">
+                    <div class="category-icon">
+                        <i class="fas fa-chalkboard-teacher"></i>
+                    </div>
+                    <h3>Teaching Materials</h3>
+                    <p>Interactive slides for classroom instruction, online courses, and educational webinars</p>
+                    <span class="category-count">3,500+ templates</span>
+                </div>
+                <!-- 动画模板 -->
+                <div class="category-card">
+                    <div class="category-icon">
+                        <i class="fas fa-magic"></i>
+                    </div>
+                    <h3>Animated Templates</h3>
+                    <p>Eye-catching animated slides with transitions and effects for impactful presentations</p>
+                    <span class="category-count">800+ templates</span>
+                </div>
+                <!-- 创意设计 -->
+                <div class="category-card">
+                    <div class="category-icon">
+                        <i class="fas fa-palette"></i>
+                    </div>
+                    <h3>Creative Design</h3>
+                    <p>Modern and artistic templates for portfolios, pitches, marketing, and creative projects</p>
+                    <span class="category-count">1,400+ templates</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sub Categories -->
+    <section class="sub-categories">
+        <div class="container">
+            <div class="section-header">
+                <h2>Popular Tags</h2>
+                <p>Quick access to specific template types</p>
+            </div>
+            <div class="sub-grid">
+                <div class="sub-item">
+                    <i class="fas fa-flask"></i>
+                    <span>Scientific Research</span>
+                </div>
+                <div class="sub-item">
+                    <i class="fas fa-briefcase"></i>
+                    <span>Business Plan</span>
+                </div>
+                <div class="sub-item">
+                    <i class="fas fa-landmark"></i>
+                    <span>History Lessons</span>
+                </div>
+                <div class="sub-item">
+                    <i class="fas fa-calculator"></i>
+                    <span>Math Courses</span>
+                </div>
+                <div class="sub-item">
+                    <i class="fas fa-book-open"></i>
+                    <span>Literature Study</span>
+                </div>
+                <div class="sub-item">
+                    <i class="fas fa-globe"></i>
+                    <span>Geography</span>
+                </div>
+                <div class="sub-item">
+                    <i class="fas fa-atom"></i>
+                    <span>Physics Lab</span>
+                </div>
+                <div class="sub-item">
+                    <i class="fas fa-dna"></i>
+                    <span>Biology</span>
+                </div>
+                <div class="sub-item">
+                    <i class="fas fa-chart-pie"></i>
+                    <span>Data Analysis</span>
+                </div>
+                <div class="sub-item">
+                    <i class="fas fa-handshake"></i>
+                    <span>Team Meeting</span>
+                </div>
+                <div class="sub-item">
+                    <i class="fas fa-award"></i>
+                    <span>Certificate</span>
+                </div>
+                <div class="sub-item">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>Event Planning</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Templates Section -->
+    <section class="templates" id="templates">
+        <div class="container">
+            <div class="section-header">
+                <h2>Featured Templates</h2>
+                <p>Handpicked templates trending this week</p>
+            </div>
+            <div class="filter-bar">
+                <div class="filter-tabs">
+                    <button class="filter-tab active">All</button>
+                    <button class="filter-tab">Academic Defense</button>
+                    <button class="filter-tab">Work Reports</button>
+                    <button class="filter-tab">Teaching</button>
+                    <button class="filter-tab">Animated</button>
+                    <button class="filter-tab">Creative</button>
+                </div>
+                <select class="sort-select">
+                    <option>Most Popular</option>
+                    <option>Newest</option>
+                    <option>Highest Rated</option>
+                </select>
+            </div>
+            <div class="template-grid">
+                <!-- Template 1: Academic -->
+                <div class="template-card" data-template="PhD Thesis Defense Pro" data-category="Academic Defense" data-slides="35" data-ratio="16:9" data-rating="4.9" data-reviews="128">
+                    <div class="template-preview" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                        <div class="template-badges">
+                            <span class="template-badge badge-free">FREE</span>
+                        </div>
+                        <div class="template-overlay">
+                            <button class="overlay-btn preview-btn" title="Preview"><i class="fas fa-eye"></i></button>
+                            <button class="overlay-btn download-btn" data-template="PhD Thesis Defense Pro" title="Download"><i class="fas fa-download"></i></button>
+                        </div>
+                    </div>
+                    <div class="template-info">
+                        <span class="template-tag">Academic Defense</span>
+                        <h3>PhD Thesis Defense Pro</h3>
+                        <div class="template-meta">
+                            <span>35 slides · 16:9</span>
+                            <div class="template-rating">
+                                <i class="fas fa-star"></i>
+                                <span>4.9</span>
+                            </div>
+                        </div>
+                        <div class="template-stats">
+                            <span class="stat-views"><i class="fas fa-eye"></i> <span class="views-count">1,247</span></span>
+                            <span class="stat-downloads"><i class="fas fa-download"></i> <span class="downloads-count">856</span></span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Template 2: Work Report -->
+                <div class="template-card" data-template="Quarterly Business Review" data-category="Work Reports" data-slides="28" data-ratio="16:9" data-rating="4.8" data-reviews="96">
+                    <div class="template-preview" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
+                        <div class="template-badges">
+                            <span class="template-badge badge-hot">HOT</span>
+                        </div>
+                        <div class="template-overlay">
+                            <button class="overlay-btn preview-btn" title="Preview"><i class="fas fa-eye"></i></button>
+                            <button class="overlay-btn download-btn" data-template="Quarterly Business Review" title="Download"><i class="fas fa-download"></i></button>
+                        </div>
+                    </div>
+                    <div class="template-info">
+                        <span class="template-tag">Work Report</span>
+                        <h3>Quarterly Business Review</h3>
+                        <div class="template-meta">
+                            <span>28 slides · 16:9</span>
+                            <div class="template-rating">
+                                <i class="fas fa-star"></i>
+                                <span>4.8</span>
+                            </div>
+                        </div>
+                        <div class="template-stats">
+                            <span class="stat-views"><i class="fas fa-eye"></i> <span class="views-count">3,562</span></span>
+                            <span class="stat-downloads"><i class="fas fa-download"></i> <span class="downloads-count">2,134</span></span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Template 3: Teaching -->
+                <div class="template-card" data-template="Interactive Science Lab Guide" data-category="Teaching Materials" data-slides="42" data-ratio="16:9" data-rating="5.0" data-reviews="215">
+                    <div class="template-preview" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                        <div class="template-badges">
+                            <span class="template-badge badge-new">NEW</span>
+                        </div>
+                        <div class="template-overlay">
+                            <button class="overlay-btn preview-btn" title="Preview"><i class="fas fa-eye"></i></button>
+                            <button class="overlay-btn download-btn" data-template="Interactive Science Lab Guide" title="Download"><i class="fas fa-download"></i></button>
+                        </div>
+                    </div>
+                    <div class="template-info">
+                        <span class="template-tag">Teaching Materials</span>
+                        <h3>Interactive Science Lab Guide</h3>
+                        <div class="template-meta">
+                            <span>42 slides · 16:9</span>
+                            <div class="template-rating">
+                                <i class="fas fa-star"></i>
+                                <span>5.0</span>
+                            </div>
+                        </div>
+                        <div class="template-stats">
+                            <span class="stat-views"><i class="fas fa-eye"></i> <span class="views-count">892</span></span>
+                            <span class="stat-downloads"><i class="fas fa-download"></i> <span class="downloads-count">567</span></span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Template 4: Animated -->
+                <div class="template-card" data-template="3D Animation Startup Pitch" data-category="Animated Templates" data-slides="18" data-ratio="16:9" data-rating="4.9" data-reviews="87">
+                    <div class="template-preview" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                        <div class="template-badges">
+                            <span class="template-badge badge-hot">HOT</span>
+                        </div>
+                        <div class="template-overlay">
+                            <button class="overlay-btn preview-btn" title="Preview"><i class="fas fa-eye"></i></button>
+                            <button class="overlay-btn download-btn" data-template="3D Animation Startup Pitch" title="Download"><i class="fas fa-download"></i></button>
+                        </div>
+                    </div>
+                    <div class="template-info">
+                        <span class="template-tag">Animated</span>
+                        <h3>3D Animation Startup Pitch</h3>
+                        <div class="template-meta">
+                            <span>18 slides · 16:9</span>
+                            <div class="template-rating">
+                                <i class="fas fa-star"></i>
+                                <span>4.9</span>
+                            </div>
+                        </div>
+                        <div class="template-stats">
+                            <span class="stat-views"><i class="fas fa-eye"></i> <span class="views-count">5,234</span></span>
+                            <span class="stat-downloads"><i class="fas fa-download"></i> <span class="downloads-count">3,421</span></span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Template 5: Creative -->
+                <div class="template-card" data-template="Creative Portfolio Showcase" data-category="Creative Design" data-slides="25" data-ratio="16:9" data-rating="4.7" data-reviews="64">
+                    <div class="template-preview" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+                        <div class="template-badges">
+                            <span class="template-badge badge-free">FREE</span>
+                        </div>
+                        <div class="template-overlay">
+                            <button class="overlay-btn preview-btn" title="Preview"><i class="fas fa-eye"></i></button>
+                            <button class="overlay-btn download-btn" data-template="Creative Portfolio Showcase" title="Download"><i class="fas fa-download"></i></button>
+                        </div>
+                    </div>
+                    <div class="template-info">
+                        <span class="template-tag">Creative Design</span>
+                        <h3>Creative Portfolio Showcase</h3>
+                        <div class="template-meta">
+                            <span>25 slides · 16:9</span>
+                            <div class="template-rating">
+                                <i class="fas fa-star"></i>
+                                <span>4.7</span>
+                            </div>
+                        </div>
+                        <div class="template-stats">
+                            <span class="stat-views"><i class="fas fa-eye"></i> <span class="views-count">2,156</span></span>
+                            <span class="stat-downloads"><i class="fas fa-download"></i> <span class="downloads-count">1,234</span></span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Template 6: Academic -->
+                <div class="template-card" data-template="Research Proposal Defense" data-category="Academic Defense" data-slides="22" data-ratio="16:9" data-rating="4.8" data-reviews="73">
+                    <div class="template-preview" style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);">
+                        <div class="template-overlay">
+                            <button class="overlay-btn preview-btn" title="Preview"><i class="fas fa-eye"></i></button>
+                            <button class="overlay-btn download-btn" data-template="Research Proposal Defense" title="Download"><i class="fas fa-download"></i></button>
+                        </div>
+                    </div>
+                    <div class="template-info">
+                        <span class="template-tag">Academic Defense</span>
+                        <h3>Research Proposal Defense</h3>
+                        <div class="template-meta">
+                            <span>22 slides · 16:9</span>
+                            <div class="template-rating">
+                                <i class="fas fa-star"></i>
+                                <span>4.8</span>
+                            </div>
+                        </div>
+                        <div class="template-stats">
+                            <span class="stat-views"><i class="fas fa-eye"></i> <span class="views-count">1,678</span></span>
+                            <span class="stat-downloads"><i class="fas fa-download"></i> <span class="downloads-count">945</span></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Template Preview Modal -->
+    <div class="preview-modal-overlay" id="previewModalOverlay"></div>
+    <div class="preview-modal" id="previewModal">
+        <!-- Top Navigation Bar -->
+        <div class="preview-top-nav">
+            <button class="preview-back-btn" onclick="closePreviewModal()">
+                <i class="fas fa-arrow-left"></i>
+                <span>Back to Templates</span>
+            </button>
+            <div class="preview-breadcrumb">
+                <i class="fas fa-home"></i>
+                <span class="breadcrumb-separator">/</span>
+                <span>Templates</span>
+                <span class="breadcrumb-separator">/</span>
+                <span class="breadcrumb-current" id="breadcrumbTemplateName">PhD Thesis Defense Pro</span>
+            </div>
+            <button class="preview-modal-close" onclick="closePreviewModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="preview-content">
+            <!-- Left: Preview Slides -->
+            <div class="preview-left">
+                <div class="preview-nav">
+                    <button class="preview-nav-btn" title="Previous Slide">
+                        <i class="fas fa-chevron-up"></i>
+                    </button>
+                    <button class="preview-nav-btn" title="Next Slide">
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                </div>
+                
+                <div class="preview-slides" id="previewSlides">
+                    <!-- Slides will be generated dynamically -->
+                </div>
+            </div>
+
+            <!-- Right: Sidebar -->
+            <div class="preview-sidebar">
+                <div class="sidebar-header">
+                    <span class="sidebar-category" id="sidebarCategory">ACADEMIC DEFENSE</span>
+                    <h2 class="sidebar-title" id="sidebarTitle">PhD Thesis Defense Pro</h2>
+                    <div class="sidebar-rating">
+                        <div class="stars">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                        </div>
+                        <span class="rating-text"><span id="sidebarRating">4.9</span> (<span id="sidebarReviews">128</span> reviews)</span>
+                    </div>
+                    <div class="sidebar-stats">
+                        <span><i class="fas fa-file-alt"></i> <span id="sidebarSlides">35</span> slides</span>
+                        <span><i class="fas fa-expand"></i> <span id="sidebarRatio">16:9</span></span>
+                        <span><i class="fas fa-eye"></i> <span id="sidebarViews">0</span> views</span>
+                        <span><i class="fas fa-download"></i> <span id="sidebarDownloads">0</span> downloads</span>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h4 class="sidebar-section-title">Description</h4>
+                    <p class="sidebar-text" id="sidebarDescription">
+                        A professional and comprehensive template designed for PhD thesis defenses. Features clean layouts, data visualization charts, and academic-style formatting perfect for presenting complex research findings.
+                    </p>
+                </div>
+
+                <div class="sidebar-section">
+                    <h4 class="sidebar-section-title">Tags</h4>
+                    <div class="sidebar-tags" id="sidebarTags">
+                        <span class="sidebar-tag">Academic</span>
+                        <span class="sidebar-tag">PhD</span>
+                        <span class="sidebar-tag">Research</span>
+                        <span class="sidebar-tag">Defense</span>
+                        <span class="sidebar-tag">University</span>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h4 class="sidebar-section-title">File Formats</h4>
+                    <div class="sidebar-info-grid">
+                        <div class="info-item">
+                            <div class="info-label">PowerPoint</div>
+                            <div class="info-value">.pptx</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Google Slides</div>
+                            <div class="info-value">Compatible</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Keynote</div>
+                            <div class="info-value">.key</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Aspect Ratio</div>
+                            <div class="info-value" id="sidebarFormatRatio">16:9</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h4 class="sidebar-section-title">Use Cases</h4>
+                    <p class="sidebar-text" id="sidebarUseCases">
+                        Ideal for doctoral dissertation defenses, master's thesis presentations, research proposal meetings, academic conferences, and scholarly symposiums.
+                    </p>
+                </div>
+
+                <div class="sidebar-actions">
+                    <div class="price-display">
+                        <span class="price-current">$2.99</span>
+                        <span class="price-original">$9.99</span>
+                    </div>
+                    <button class="sidebar-btn sidebar-btn-primary" onclick="fromPreviewToPayment()">
+                        <i class="fas fa-download"></i>
+                        Download Now
+                    </button>
+                    <button class="sidebar-btn sidebar-btn-secondary" onclick="closePreviewModal()">
+                        <i class="fas fa-times"></i>
+                        Close Preview
+                    </button>
+                    <div class="sidebar-guarantee">
+                        <i class="fas fa-shield-alt"></i>
+                        <span>30-day money-back guarantee</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Plan Modal -->
+    <div class="modal-overlay" id="planModal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closePlanModal()">
+                <i class="fas fa-times"></i>
+            </button>
+            
+            <div class="modal-header">
+                <span class="template-name" id="planTemplateName">Template Name</span>
+                <h2>Choose Your Plan</h2>
+                <p>Select the best option to download this template</p>
+            </div>
+
+            <div class="pricing-grid">
+                <!-- Single Template -->
+                <div class="pricing-card" onclick="selectPlan('single', 2.99, 'Single Template')">
+                    <div class="pricing-icon">
+                        <i class="fas fa-file-powerpoint"></i>
+                    </div>
+                    <div class="pricing-name">Single Template</div>
+                    <div class="pricing-desc">Download just this template</div>
+                    <div class="pricing-price">
+                        <div class="price-amount">
+                            <span class="price-currency">$</span>2.99
+                        </div>
+                        <div class="price-period">one-time payment</div>
+                    </div>
+                    <ul class="pricing-features">
+                        <li><i class="fas fa-check"></i> Instant download</li>
+                        <li><i class="fas fa-check"></i> PowerPoint format</li>
+                        <li><i class="fas fa-check"></i> 1 template only</li>
+                        <li><i class="fas fa-check"></i> Lifetime access</li>
+                    </ul>
+                    <button class="btn-buy btn-buy-secondary">Buy Now</button>
+                </div>
+
+                <!-- Monthly Membership -->
+                <div class="pricing-card popular" onclick="selectPlan('monthly', 49, 'Monthly Pro')">
+                    <div class="pricing-icon">
+                        <i class="fas fa-crown"></i>
+                    </div>
+                    <div class="pricing-name">Monthly Pro</div>
+                    <div class="pricing-desc">Unlimited downloads for 1 month</div>
+                    <div class="pricing-price">
+                        <div class="price-amount">
+                            <span class="price-currency">$</span>49
+                        </div>
+                        <div class="price-period">per month</div>
+                    </div>
+                    <ul class="pricing-features">
+                        <li><i class="fas fa-check"></i> Unlimited downloads</li>
+                        <li><i class="fas fa-check"></i> All formats included</li>
+                        <li><i class="fas fa-check"></i> 8,000+ templates</li>
+                        <li><i class="fas fa-check"></i> New templates weekly</li>
+                        <li><i class="fas fa-check"></i> Cancel anytime</li>
+                    </ul>
+                    <button class="btn-buy btn-buy-primary">Subscribe Monthly</button>
+                </div>
+
+                <!-- Annual Membership -->
+                <div class="pricing-card" onclick="selectPlan('annual', 249, 'Annual Pro')">
+                    <div class="pricing-icon">
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <div class="pricing-name">Annual Pro</div>
+                    <div class="pricing-desc">Best value for professionals</div>
+                    <div class="pricing-price">
+                        <div class="price-amount">
+                            <span class="price-currency">$</span>249
+                        </div>
+                        <div class="price-period">per year</div>
+                        <div class="price-original">$588 originally</div>
+                        <span class="price-save">Save 58%</span>
+                    </div>
+                    <ul class="pricing-features">
+                        <li><i class="fas fa-check"></i> Unlimited downloads</li>
+                        <li><i class="fas fa-check"></i> All formats included</li>
+                        <li><i class="fas fa-check"></i> 8,000+ templates</li>
+                        <li><i class="fas fa-check"></i> Priority support</li>
+                        <li><i class="fas fa-check"></i> New weekly templates</li>
+                    </ul>
+                    <button class="btn-buy btn-buy-secondary">Subscribe Yearly</button>
+                </div>
+            </div>
+
+            <div class="pricing-guarantee">
+                <p>
+                    <i class="fas fa-shield-alt"></i>
+                    30-day money-back guarantee · Secure payment · Instant access
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Auth Modal (Login/Register) -->
+    <div class="modal-overlay" id="authModal">
+        <div class="modal-content" style="max-width: 480px;">
+            <button class="modal-close" onclick="closeAuthModal()">
+                <i class="fas fa-times"></i>
+            </button>
+            
+            <div class="auth-container">
+                <div class="auth-header">
+                    <div class="auth-logo">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <h2>Welcome to EduSlides</h2>
+                    <p>Sign in or create an account to continue</p>
+                </div>
+
+                <div class="auth-social">
+                    <button class="auth-social-btn google" onclick="socialLogin('google')">
+                        <i class="fab fa-google"></i>
+                        <span>Continue with Google</span>
+                    </button>
+                    <button class="auth-social-btn facebook" onclick="socialLogin('facebook')">
+                        <i class="fab fa-facebook-f"></i>
+                        <span>Continue with Facebook</span>
+                    </button>
+                    <button class="auth-social-btn apple" onclick="socialLogin('apple')">
+                        <i class="fab fa-apple"></i>
+                        <span>Continue with Apple</span>
+                    </button>
+                    <button class="auth-social-btn microsoft" onclick="socialLogin('microsoft')">
+                        <i class="fab fa-microsoft"></i>
+                        <span>Continue with Microsoft</span>
+                    </button>
+                </div>
+
+                <div class="auth-divider">
+                    <span>or continue with email</span>
+                </div>
+
+                <form class="auth-form" onsubmit="return handleEmailAuth(event)">
+                    <div class="form-group">
+                        <label>Email Address</label>
+                        <input type="email" placeholder="your@email.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" placeholder="Enter your password" required>
+                    </div>
+                    <div class="auth-options">
+                        <label class="remember-me">
+                            <input type="checkbox">
+                            <span>Remember me</span>
+                        </label>
+                        <a href="#" class="forgot-link">Forgot password?</a>
+                    </div>
+                    <button type="submit" class="auth-submit-btn">Sign In</button>
+                </form>
+
+                <div class="auth-footer">
+                    <p>Don't have an account? <a href="#" onclick="toggleAuthMode(event)">Sign up</a></p>
+                </div>
+
+                <div class="auth-terms">
+                    By continuing, you agree to our <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Method Modal -->
+    <div class="modal-overlay" id="paymentModal">
+        <div class="modal-content">
+            <!-- Top Navigation -->
+            <div class="modal-top-nav">
+                <button class="modal-nav-back" onclick="backToPlans()">
+                    <i class="fas fa-arrow-left"></i>
+                    <span>Back to Plans</span>
+                </button>
+                <div class="modal-nav-steps">
+                    <div class="nav-step completed">
+                        <span class="step-number"><i class="fas fa-check"></i></span>
+                        <span class="step-label">Select Plan</span>
+                    </div>
+                    <div class="step-line active"></div>
+                    <div class="nav-step active">
+                        <span class="step-number">2</span>
+                        <span class="step-label">Payment</span>
+                    </div>
+                    <div class="step-line"></div>
+                    <div class="nav-step">
+                        <span class="step-number">3</span>
+                        <span class="step-label">Download</span>
+                    </div>
+                </div>
+                <button class="modal-close" onclick="closePaymentModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="modal-header" style="padding-top: 20px;">
+                <span class="template-name" id="paymentTemplateName" style="display: none;"></span>
+                <h2>Complete Your Purchase</h2>
+                <p>Choose your preferred payment method</p>
+            </div>
+
+            <div class="payment-methods">
+                <div class="order-summary">
+                    <div>
+                        <div class="label">Selected Plan</div>
+                        <div class="plan-name" id="selectedPlanName">Monthly Pro</div>
+                    </div>
+                    <div class="price" id="selectedPlanPrice">$49</div>
+                </div>
+
+                <div class="payment-options">
+                    <!-- Credit Card -->
+                    <div class="payment-option active" data-method="card" onclick="selectPaymentMethod('card')">
+                        <div class="payment-option-radio"></div>
+                        <div class="payment-option-icon card">
+                            <i class="fas fa-credit-card"></i>
+                        </div>
+                        <div class="payment-option-info">
+                            <div class="payment-option-name">Credit / Debit Card</div>
+                            <div class="payment-option-desc">Visa, Mastercard, Amex</div>
+                        </div>
+                        <div class="payment-option-logos">
+                            <div class="payment-logo visa">VISA</div>
+                            <div class="payment-logo mastercard">MC</div>
+                            <div class="payment-logo amex">AMEX</div>
+                        </div>
+                    </div>
+
+                    <!-- Card Form -->
+                    <div class="card-form active" id="cardForm">
+                        <div class="form-group">
+                            <label>Card Number</label>
+                            <input type="text" placeholder="1234 5678 9012 3456" maxlength="19">
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Expiry Date</label>
+                                <input type="text" placeholder="MM / YY" maxlength="7">
+                            </div>
+                            <div class="form-group">
+                                <label>CVV</label>
+                                <input type="text" placeholder="123" maxlength="4">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Cardholder Name</label>
+                            <input type="text" placeholder="John Doe">
+                        </div>
+                    </div>
+
+                    <!-- PayPal -->
+                    <div class="payment-option" data-method="paypal" onclick="selectPaymentMethod('paypal')">
+                        <div class="payment-option-radio"></div>
+                        <div class="payment-option-icon paypal">
+                            <i class="fab fa-paypal"></i>
+                        </div>
+                        <div class="payment-option-info">
+                            <div class="payment-option-name">PayPal</div>
+                            <div class="payment-option-desc">Pay with your PayPal account</div>
+                        </div>
+                    </div>
+
+                    <!-- Google Pay -->
+                    <div class="payment-option" data-method="google" onclick="selectPaymentMethod('google')">
+                        <div class="payment-option-radio"></div>
+                        <div class="payment-option-icon google">
+                            <i class="fab fa-google"></i>
+                        </div>
+                        <div class="payment-option-info">
+                            <div class="payment-option-name">Google Pay</div>
+                            <div class="payment-option-desc">Quick payment with Google</div>
+                        </div>
+                    </div>
+
+                    <!-- Alipay -->
+                    <div class="payment-option" data-method="alipay" onclick="selectPaymentMethod('alipay')">
+                        <div class="payment-option-radio"></div>
+                        <div class="payment-option-icon alipay">
+                            <i class="fab fa-alipay"></i>
+                        </div>
+                        <div class="payment-option-info">
+                            <div class="payment-option-name">Alipay</div>
+                            <div class="payment-option-desc">Popular in China · 支付宝</div>
+                        </div>
+                    </div>
+
+                    <!-- WeChat Pay -->
+                    <div class="payment-option" data-method="wechat" onclick="selectPaymentMethod('wechat')">
+                        <div class="payment-option-radio"></div>
+                        <div class="payment-option-icon wechat">
+                            <i class="fab fa-weixin"></i>
+                        </div>
+                        <div class="payment-option-info">
+                            <div class="payment-option-name">WeChat Pay</div>
+                            <div class="payment-option-desc">Cross-border payment · 微信支付</div>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn-pay" onclick="processPayment()">
+                    <span id="payButtonText">Pay $49</span>
+                    <i class="fas fa-lock" style="margin-left: 8px;"></i>
+                </button>
+
+                <div class="secure-note">
+                    <i class="fas fa-shield-alt"></i>
+                    <span>Secure SSL Encryption · Your payment information is protected</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Features -->
+    <section class="features" id="features">
+        <div class="container">
+            <div class="section-header">
+                <h2>Why EduSlides?</h2>
+                <p>Everything you need to create stunning presentations</p>
+            </div>
+            <div class="feature-grid">
+                <div class="feature-item">
+                    <div class="feature-icon">
+                        <i class="fas fa-layer-group"></i>
+                    </div>
+                    <h3>5 Main Categories</h3>
+                    <p>Organized by use case - Academic, Business, Teaching, Animation, and Creative. Find what you need in seconds.</p>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">
+                        <i class="fas fa-edit"></i>
+                    </div>
+                    <h3>100% Editable</h3>
+                    <p>All templates are fully customizable. Change colors, fonts, images and layouts to match your brand or style.</p>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">
+                        <i class="fas fa-bolt"></i>
+                    </div>
+                    <h3>Quick Download</h3>
+                    <p>Instant access to PowerPoint, Google Slides, and Keynote formats. Start presenting in minutes.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta">
+        <h2>Ready to Create Amazing Presentations?</h2>
+        <p>Join thousands of educators, students, and professionals who trust EduSlides for their presentations.</p>
+        <button class="btn" onclick="openAuthModal()">Get Started for Free</button>
+    </section>
+
+    <!-- Consult Button -->
+    <div class="consult-widget" id="consultWidget">
+        <button class="consult-btn" onclick="toggleConsult(event)" title="Contact Support">
+            <i class="fas fa-headset"></i>
+        </button>
+        <div class="consult-panel" id="consultPanel">
+            <div class="consult-header">
+                <h4><i class="fab fa-whatsapp"></i> Contact Us</h4>
+                <button class="consult-close" onclick="toggleConsult(event)">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="consult-content">
+                <div class="consult-item">
+                    <div class="consult-icon whatsapp">
+                        <i class="fab fa-whatsapp"></i>
+                    </div>
+                    <div class="consult-info">
+                        <div class="consult-label">WhatsApp</div>
+                        <div class="consult-value">15799364003</div>
+                        <div class="consult-qr">
+                            <div class="qr-code">
+                                <i class="fas fa-qrcode"></i>
+                                <span>Scan to chat</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="consult-divider"></div>
+                <div class="consult-item">
+                    <div class="consult-icon phone">
+                        <i class="fas fa-phone-alt"></i>
+                    </div>
+                    <div class="consult-info">
+                        <div class="consult-label">Phone Support</div>
+                        <div class="consult-value">+1 (800) 987-6543</div>
+                        <div class="consult-hours">
+                            <i class="far fa-clock"></i>
+                            Mon-Fri: 9AM-6PM EST
+                        </div>
+                    </div>
+                </div>
+                <div class="consult-divider"></div>
+                <div class="consult-item">
+                    <div class="consult-icon email">
+                        <i class="fas fa-envelope"></i>
+                    </div>
+                    <div class="consult-info">
+                        <div class="consult-label">Email</div>
+                        <div class="consult-value">support@eduslides.com</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <a href="#" class="logo" onclick="showPageInfo('Home'); return false;">
+                    <i class="fas fa-graduation-cap"></i>
+                    EduSlides
+                </a>
+                <p>Professional presentation templates for every scenario. From academic defense to creative portfolios, we have you covered.</p>
+            </div>
+            <div class="footer-links">
+                <h4>Categories</h4>
+                <ul>
+                    <li><a href="#" onclick="filterByCategory('Academic Defense'); return false;">Academic Defense</a></li>
+                    <li><a href="#" onclick="filterByCategory('Work Reports'); return false;">Work Reports</a></li>
+                    <li><a href="#" onclick="filterByCategory('Teaching Materials'); return false;">Teaching Materials</a></li>
+                    <li><a href="#" onclick="filterByCategory('Animated Templates'); return false;">Animated Templates</a></li>
+                    <li><a href="#" onclick="filterByCategory('Creative Design'); return false;">Creative Design</a></li>
+                </ul>
+            </div>
+            <div class="footer-links">
+                <h4>Resources</h4>
+                <ul>
+                    <li><a href="#" onclick="showPageInfo('Help Center'); return false;">Help Center</a></li>
+                    <li><a href="#" onclick="showPageInfo('Blog'); return false;">Blog</a></li>
+                    <li><a href="#" onclick="showPageInfo('Presentation Tips'); return false;">Presentation Tips</a></li>
+                    <li><a href="#" onclick="showPageInfo('Video Tutorials'); return false;">Video Tutorials</a></li>
+                </ul>
+            </div>
+            <div class="footer-links">
+                <h4>Company</h4>
+                <ul>
+                    <li><a href="#" onclick="showPageInfo('About Us'); return false;">About Us</a></li>
+                    <li><a href="#" onclick="showPageInfo('Contact'); return false;">Contact</a></li>
+                    <li><a href="#" onclick="showPageInfo('Privacy Policy'); return false;">Privacy Policy</a></li>
+                    <li><a href="#" onclick="showPageInfo('Terms of Service'); return false;">Terms of Service</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2024 EduSlides. All rights reserved.</p>
+            <div class="footer-social">
+                <a href="#" onclick="showSocialInfo('Twitter'); return false;"><i class="fab fa-twitter"></i></a>
+                <a href="#" onclick="showSocialInfo('Facebook'); return false;"><i class="fab fa-facebook-f"></i></a>
+                <a href="#" onclick="showSocialInfo('Instagram'); return false;"><i class="fab fa-instagram"></i></a>
+                <a href="#" onclick="showSocialInfo('LinkedIn'); return false;"><i class="fab fa-linkedin-in"></i></a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Template Data
+        const templateData = {
+            'PhD Thesis Defense Pro': {
+                category: 'Academic Defense',
+                description: 'A professional and comprehensive template designed for PhD thesis defenses. Features clean layouts, data visualization charts, and academic-style formatting perfect for presenting complex research findings.',
+                tags: ['Academic', 'PhD', 'Research', 'Defense', 'University'],
+                useCases: 'Ideal for doctoral dissertation defenses, master\'s thesis presentations, research proposal meetings, academic conferences, and scholarly symposiums.',
+                slides: [
+                    { color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', number: 1 },
+                    { color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', number: 2 },
+                    { color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', number: 3 },
+                    { color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', number: 4 },
+                    { color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', number: 5 },
+                    { color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', number: 6 }
+                ]
+            },
+            'Quarterly Business Review': {
+                category: 'Work Reports',
+                description: 'A comprehensive business template for quarterly reviews and strategic planning. Includes KPI dashboards, financial charts, goal tracking, and professional layouts for executive presentations.',
+                tags: ['Business', 'Quarterly', 'KPI', 'Finance', 'Strategy'],
+                useCases: 'Perfect for quarterly business reviews, board meetings, executive summaries, strategic planning sessions, and performance reviews.',
+                slides: [
+                    { color: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)', number: 1 },
+                    { color: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)', number: 2 },
+                    { color: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)', number: 3 },
+                    { color: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)', number: 4 },
+                    { color: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)', number: 5 },
+                    { color: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)', number: 6 }
+                ]
+            },
+            'Interactive Science Lab Guide': {
+                category: 'Teaching Materials',
+                description: 'An engaging educational template designed for science laboratory instruction. Features interactive elements, step-by-step procedures, safety guidelines, and experiment documentation layouts.',
+                tags: ['Science', 'Education', 'Lab', 'Teaching', 'Interactive'],
+                useCases: 'Ideal for science lab courses, virtual lab demonstrations, biology/chemistry/physics lessons, and interactive classroom presentations.',
+                slides: [
+                    { color: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', number: 1 },
+                    { color: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', number: 2 },
+                    { color: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', number: 3 },
+                    { color: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', number: 4 },
+                    { color: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', number: 5 },
+                    { color: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', number: 6 }
+                ]
+            },
+            '3D Animation Startup Pitch': {
+                category: 'Animated Templates',
+                description: 'A dynamic animated template featuring 3D transitions and effects. Perfect for startup pitches, product launches, and presentations that need to make a lasting impression.',
+                tags: ['Animated', '3D', 'Startup', 'Pitch', 'Modern'],
+                useCases: 'Best for startup pitch decks, investor presentations, product launches, creative agencies, and tech company showcases.',
+                slides: [
+                    { color: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', number: 1 },
+                    { color: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', number: 2 },
+                    { color: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', number: 3 },
+                    { color: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', number: 4 },
+                    { color: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', number: 5 },
+                    { color: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', number: 6 }
+                ]
+            },
+            'Creative Portfolio Showcase': {
+                category: 'Creative Design',
+                description: 'A modern, artistic template perfect for showcasing creative work. Features bold typography, image galleries, and contemporary layouts for designers, artists, and creatives.',
+                tags: ['Creative', 'Portfolio', 'Design', 'Artistic', 'Modern'],
+                useCases: 'Perfect for designer portfolios, artist showcases, photography presentations, creative agency pitches, and personal branding.',
+                slides: [
+                    { color: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)', number: 1 },
+                    { color: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)', number: 2 },
+                    { color: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)', number: 3 },
+                    { color: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)', number: 4 },
+                    { color: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)', number: 5 },
+                    { color: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)', number: 6 }
+                ]
+            },
+            'Research Proposal Defense': {
+                category: 'Academic Defense',
+                description: 'A structured template for research proposal presentations. Includes literature review sections, methodology layouts, timeline charts, and expected outcomes visualization.',
+                tags: ['Research', 'Proposal', 'Academic', 'PhD', 'Methodology'],
+                useCases: 'Ideal for research proposal defenses, grant applications, funding requests, and academic research committee presentations.',
+                slides: [
+                    { color: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)', number: 1 },
+                    { color: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)', number: 2 },
+                    { color: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)', number: 3 },
+                    { color: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)', number: 4 },
+                    { color: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)', number: 5 },
+                    { color: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)', number: 6 }
+                ]
+            }
+        };
+
+        // Preview Modal Elements
+        const previewModalOverlay = document.getElementById('previewModalOverlay');
+        const previewModal = document.getElementById('previewModal');
+        const previewSlides = document.getElementById('previewSlides');
+        const breadcrumbTemplateName = document.getElementById('breadcrumbTemplateName');
+        const sidebarCategory = document.getElementById('sidebarCategory');
+        const sidebarTitle = document.getElementById('sidebarTitle');
+        const sidebarRating = document.getElementById('sidebarRating');
+        const sidebarViews = document.getElementById('sidebarViews');
+        const sidebarDownloads = document.getElementById('sidebarDownloads');
+        const sidebarReviews = document.getElementById('sidebarReviews');
+        const sidebarSlides = document.getElementById('sidebarSlides');
+        const sidebarRatio = document.getElementById('sidebarRatio');
+        const sidebarFormatRatio = document.getElementById('sidebarFormatRatio');
+        const sidebarDescription = document.getElementById('sidebarDescription');
+        const sidebarTags = document.getElementById('sidebarTags');
+        const sidebarUseCases = document.getElementById('sidebarUseCases');
+
+        let currentTemplate = '';
+
+        // Preview Modal Functions
+        function openPreviewModal(templateName) {
+            currentTemplate = templateName;
+            const data = templateData[templateName];
+            const card = document.querySelector(`[data-template="${templateName}"]`);
+            
+            // Get stats from card
+            const viewsEl = card.querySelector('.views-count');
+            const downloadsEl = card.querySelector('.downloads-count');
+            const views = viewsEl ? viewsEl.textContent : '0';
+            const downloads = downloadsEl ? downloadsEl.textContent : '0';
+
+            // Update sidebar info
+            sidebarCategory.textContent = data.category.toUpperCase();
+            sidebarTitle.textContent = templateName;
+            breadcrumbTemplateName.textContent = templateName;
+            sidebarRating.textContent = card.dataset.rating;
+            sidebarViews.textContent = views;
+            sidebarDownloads.textContent = downloads;
+            sidebarReviews.textContent = card.dataset.reviews;
+            sidebarSlides.textContent = card.dataset.slides;
+            sidebarRatio.textContent = card.dataset.ratio;
+            sidebarFormatRatio.textContent = card.dataset.ratio;
+            sidebarDescription.textContent = data.description;
+            sidebarUseCases.textContent = data.useCases;
+            
+            // Update tags
+            sidebarTags.innerHTML = data.tags.map(tag => `<span class="sidebar-tag">${tag}</span>`).join('');
+            
+            // Generate slides
+            previewSlides.innerHTML = data.slides.map(slide => `
+                <div class="preview-slide" style="background: ${slide.color};">
+                    <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; font-weight: 600;">
+                        Slide ${slide.number}
+                    </div>
+                    <span class="slide-number">${slide.number} / ${data.slides.length}</span>
+                </div>
+            `).join('');
+            
+            previewModalOverlay.classList.add('active');
+            previewModal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closePreviewModal() {
+            previewModalOverlay.classList.remove('active');
+            previewModal.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        function fromPreviewToPayment() {
+            closePreviewModal();
+            setTimeout(() => {
+                openPlanModal(currentTemplate);
+            }, 300);
+        }
+
+        // Payment Modal Elements
+        const planModal = document.getElementById('planModal');
+        const paymentModal = document.getElementById('paymentModal');
+        const planTemplateName = document.getElementById('planTemplateName');
+        const selectedPlanName = document.getElementById('selectedPlanName');
+        const selectedPlanPrice = document.getElementById('selectedPlanPrice');
+        const payButtonText = document.getElementById('payButtonText');
+        const cardForm = document.getElementById('cardForm');
+
+        let currentPlan = {
+            type: '',
+            price: 0,
+            name: ''
+        };
+
+        // Plan Modal Functions
+        function openPlanModal(templateName) {
+            planTemplateName.textContent = templateName;
+            planModal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closePlanModal() {
+            planModal.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        // Payment Modal Functions
+        function openPaymentModal() {
+            paymentModal.classList.add('active');
+        }
+
+        function closePaymentModal() {
+            paymentModal.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        function backToPlans() {
+            closePaymentModal();
+            setTimeout(() => {
+                planModal.classList.add('active');
+            }, 200);
+        }
+
+        // Select Plan
+        function selectPlan(type, price, name) {
+            currentPlan = { type, price, name };
+            closePlanModal();
+            setTimeout(() => {
+                selectedPlanName.textContent = name;
+                selectedPlanPrice.textContent = '$' + price;
+                payButtonText.textContent = type === 'single' ? 'Pay $' + price : 'Subscribe - $' + price;
+                openPaymentModal();
+            }, 200);
+        }
+
+        // Select Payment Method
+        function selectPaymentMethod(method) {
+            document.querySelectorAll('.payment-option').forEach(option => {
+                option.classList.remove('active');
+            });
+            document.querySelector(`.payment-option[data-method="${method}"]`).classList.add('active');
+
+            if (method === 'card') {
+                cardForm.classList.add('active');
+            } else {
+                cardForm.classList.remove('active');
+            }
+
+            const methodNames = {
+                'card': currentPlan.type === 'single' ? 'Pay $' + currentPlan.price : 'Subscribe - $' + currentPlan.price,
+                'paypal': 'Continue with PayPal',
+                'google': 'Pay with Google Pay',
+                'alipay': 'Pay with Alipay',
+                'wechat': 'Pay with WeChat Pay'
+            };
+            payButtonText.textContent = methodNames[method];
+        }
+
+        // Process Payment
+        function processPayment() {
+            const activeMethod = document.querySelector('.payment-option.active').dataset.method;
+            
+            if (activeMethod === 'card') {
+                const inputs = cardForm.querySelectorAll('input');
+                let valid = true;
+                inputs.forEach(input => {
+                    if (!input.value.trim()) {
+                        input.style.borderColor = '#ef4444';
+                        valid = false;
+                    } else {
+                        input.style.borderColor = '';
+                    }
+                });
+
+                if (!valid) {
+                    alert('Please fill in all card details');
+                    return;
+                }
+            }
+
+            const btn = document.querySelector('.btn-pay');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            btn.disabled = true;
+
+            setTimeout(() => {
+                btn.innerHTML = '<i class="fas fa-check"></i> Payment Successful!';
+                btn.style.background = 'var(--success)';
+                
+                setTimeout(() => {
+                    closePaymentModal();
+                    btn.innerHTML = originalText;
+                    btn.style.background = '';
+                    btn.disabled = false;
+                    alert('Thank you for your purchase! Your template is ready for download.');
+                }, 1500);
+            }, 2000);
+        }
+
+        // Close modals when clicking outside
+        previewModalOverlay.addEventListener('click', closePreviewModal);
+        planModal.addEventListener('click', function(e) {
+            if (e.target === planModal) closePlanModal();
+        });
+        paymentModal.addEventListener('click', function(e) {
+            if (e.target === paymentModal) closePaymentModal();
+        });
+
+        // Close with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                if (paymentModal.classList.contains('active')) {
+                    closePaymentModal();
+                } else if (planModal.classList.contains('active')) {
+                    closePlanModal();
+                } else if (previewModal.classList.contains('active')) {
+                    closePreviewModal();
+                }
+            }
+        });
+
+        // Increment stat counter
+        function incrementStat(card, statClass) {
+            const statEl = card.querySelector(statClass);
+            if (!statEl) return;
+            
+            const currentText = statEl.textContent;
+            let currentNum = parseFloat(currentText.replace(/[k,m]/gi, ''));
+            let multiplier = 1;
+            
+            if (currentText.includes('k')) multiplier = 1000;
+            if (currentText.includes('m')) multiplier = 1000000;
+            
+            currentNum = (currentNum * multiplier) + 1;
+            
+            // Format back
+            let newText;
+            if (currentNum >= 1000000) {
+                newText = (currentNum / 1000000).toFixed(1).replace(/\.0$/, '') + 'm';
+            } else if (currentNum >= 1000) {
+                newText = (currentNum / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+            } else {
+                newText = currentNum.toString();
+            }
+            
+            statEl.textContent = newText;
+        }
+
+        // Preview buttons click event
+        document.querySelectorAll('.preview-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const card = this.closest('.template-card');
+                const templateName = card.dataset.template;
+                incrementStat(card, '.views-count');
+                openPreviewModal(templateName);
+            });
+        });
+
+        // Download buttons click event
+        document.querySelectorAll('.download-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const card = this.closest('.template-card');
+                const templateName = this.getAttribute('data-template');
+                incrementStat(card, '.downloads-count');
+                openPlanModal(templateName);
+            });
+        });
+
+        // Card input formatting
+        document.querySelector('input[placeholder="1234 5678 9012 3456"]')?.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\s/g, '').replace(/[^0-9]/gi, '');
+            let formattedValue = value.match(/.{1,4}/g)?.join(' ') || '';
+            e.target.value = formattedValue;
+        });
+
+        document.querySelector('input[placeholder="MM / YY"]')?.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length >= 2) {
+                value = value.substring(0, 2) + ' / ' + value.substring(2, 4);
+            }
+            e.target.value = value;
+        });
+
+        // Consult Widget Toggle
+        function toggleConsult(e) {
+            if (e) e.stopPropagation();
+            
+            const panel = document.getElementById('consultPanel');
+            const btn = document.querySelector('.consult-btn');
+            const isActive = panel.classList.contains('active');
+            
+            if (isActive) {
+                // Close panel
+                panel.classList.remove('active');
+                btn.classList.remove('active');
+                btn.innerHTML = '<i class="fas fa-headset"></i>';
+            } else {
+                // Open panel
+                panel.classList.add('active');
+                btn.classList.add('active');
+                btn.innerHTML = '<i class="fas fa-times"></i>';
+            }
+        }
+
+        // Close consult panel when clicking outside
+        document.addEventListener('click', function(e) {
+            const widget = document.getElementById('consultWidget');
+            const panel = document.getElementById('consultPanel');
+            if (panel.classList.contains('active') && !widget.contains(e.target)) {
+                toggleConsult();
+            }
+        });
+
+        // Search functionality
+        const searchInput = document.getElementById('searchInput');
+        const searchDropdown = document.getElementById('searchDropdown');
+        const searchResults = document.getElementById('searchResults');
+
+        // Search function
+        function performSearch(query) {
+            if (!query.trim()) {
+                searchDropdown.classList.remove('active');
+                return;
+            }
+
+            const normalizedQuery = query.toLowerCase().trim();
+            const results = [];
+
+            // Search through all templates
+            Object.keys(templateData).forEach(templateName => {
+                const data = templateData[templateName];
+                const card = document.querySelector(`[data-template="${templateName}"]`);
+                
+                if (!card) return;
+
+                // Check if query matches name, category, or tags
+                const matchesName = templateName.toLowerCase().includes(normalizedQuery);
+                const matchesCategory = data.category.toLowerCase().includes(normalizedQuery);
+                const matchesTags = data.tags.some(tag => tag.toLowerCase().includes(normalizedQuery));
+
+                if (matchesName || matchesCategory || matchesTags) {
+                    const viewsEl = card.querySelector('.views-count');
+                    const downloadsEl = card.querySelector('.downloads-count');
+                    results.push({
+                        name: templateName,
+                        category: data.category,
+                        slides: card.dataset.slides,
+                        ratio: card.dataset.ratio,
+                        rating: card.dataset.rating,
+                        reviews: card.dataset.reviews,
+                        gradient: card.querySelector('.template-preview').style.background,
+                        tags: data.tags,
+                        views: viewsEl ? viewsEl.textContent : '0',
+                        downloads: downloadsEl ? downloadsEl.textContent : '0'
+                    });
+                }
+            });
+
+            displaySearchResults(results, query);
+        }
+
+        // Display search results
+        function displaySearchResults(results, query) {
+            if (results.length === 0) {
+                searchResults.innerHTML = `
+                    <div class="search-empty">
+                        <i class="fas fa-search"></i>
+                        <p>No templates found for "${query}"</p>
+                    </div>
+                `;
+            } else {
+                searchResults.innerHTML = `
+                    <div class="search-header">${results.length} result${results.length > 1 ? 's' : ''} for "${query}"</div>
+                    ${results.map(result => `
+                        <div class="search-result-item" onclick="openPreviewFromSearch('${result.name}')">
+                            <div class="search-result-thumb" style="background: ${result.gradient};">
+                                <i class="fas fa-image"></i>
+                            </div>
+                            <div class="search-result-info">
+                                <div class="search-result-title">${result.name}</div>
+                                <div class="search-result-meta">
+                                    <span class="search-result-category">${result.category}</span>
+                                    <span>${result.slides} slides</span>
+                                    <span><i class="fas fa-eye" style="color: #94a3b8;"></i> ${result.views}</span>
+                                    <span><i class="fas fa-download" style="color: var(--success);"></i> ${result.downloads}</span>
+                                </div>
+                            </div>
+                            <i class="fas fa-chevron-right" style="color: var(--text-light);"></i>
+                        </div>
+                    `).join('')}
+                `;
+            }
+            searchDropdown.classList.add('active');
+        }
+
+        // Open preview from search
+        function openPreviewFromSearch(templateName) {
+            searchDropdown.classList.remove('active');
+            searchInput.value = '';
+            openPreviewModal(templateName);
+        }
+
+        // Search input event
+        let searchTimeout;
+        searchInput.addEventListener('input', function(e) {
+            clearTimeout(searchTimeout);
+            const query = e.target.value;
+            
+            if (query.trim()) {
+                searchTimeout = setTimeout(() => performSearch(query), 200);
+            } else {
+                searchDropdown.classList.remove('active');
+            }
+        });
+
+        // Show dropdown when clicking on input with existing value
+        searchInput.addEventListener('focus', function() {
+            const query = this.value;
+            if (query.trim()) {
+                performSearch(query);
+            }
+        });
+
+        // Close search dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.search-box')) {
+                searchDropdown.classList.remove('active');
+            }
+        });
+
+        // Keep dropdown open when clicking inside it
+        searchDropdown.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+
+        // Prevent closing when clicking on input
+        searchInput.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const query = this.value;
+            if (query.trim()) {
+                performSearch(query);
+            }
+        });
+
+        // Auth Modal Functions
+        const authModal = document.getElementById('authModal');
+        let isSignUp = false;
+
+        function openAuthModal() {
+            authModal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeAuthModal() {
+            authModal.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        function toggleAuthMode(e) {
+            e.preventDefault();
+            isSignUp = !isSignUp;
+            const submitBtn = document.querySelector('.auth-submit-btn');
+            const footerText = document.querySelector('.auth-footer p');
+            const headerTitle = document.querySelector('.auth-header h2');
+            
+            if (isSignUp) {
+                submitBtn.textContent = 'Create Account';
+                footerText.innerHTML = 'Already have an account? <a href="#" onclick="toggleAuthMode(event)">Sign in</a>';
+                headerTitle.textContent = 'Create Your Account';
+            } else {
+                submitBtn.textContent = 'Sign In';
+                footerText.innerHTML = 'Don\'t have an account? <a href="#" onclick="toggleAuthMode(event)">Sign up</a>';
+                headerTitle.textContent = 'Welcome to EduSlides';
+            }
+        }
+
+        function socialLogin(provider) {
+            const providerNames = {
+                'google': 'Google',
+                'facebook': 'Facebook',
+                'apple': 'Apple',
+                'microsoft': 'Microsoft'
+            };
+            
+            // Simulate social login
+            const btn = document.querySelector(`.auth-social-btn.${provider}`);
+            const originalContent = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Connecting...';
+            btn.disabled = true;
+
+            setTimeout(() => {
+                btn.innerHTML = originalContent;
+                btn.disabled = false;
+                closeAuthModal();
+                alert(`Successfully connected with ${providerNames[provider]}!`);
+            }, 1500);
+        }
+
+        function handleEmailAuth(e) {
+            e.preventDefault();
+            const submitBtn = document.querySelector('.auth-submit-btn');
+            const originalText = submitBtn.textContent;
+            
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i> ' + (isSignUp ? 'Creating account...' : 'Signing in...');
+            submitBtn.disabled = true;
+
+            setTimeout(() => {
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+                closeAuthModal();
+                alert(isSignUp ? 'Account created successfully!' : 'Signed in successfully!');
+            }, 1500);
+
+            return false;
+        }
+
+        // Close auth modal when clicking outside
+        authModal.addEventListener('click', function(e) {
+            if (e.target === authModal) closeAuthModal();
+        });
+
+        // Navigation function
+        function scrollToSection(sectionId) {
+            const section = document.getElementById(sectionId);
+            if (section) {
+                section.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
+        // Footer link functions
+        function showPageInfo(pageName) {
+            // Create a toast notification
+            showToast(`📄 ${pageName} page - Coming Soon!`);
+        }
+
+        function showSocialInfo(platform) {
+            showToast(`🌐 Follow us on ${platform} - Coming Soon!`);
+        }
+
+        function filterByCategory(category) {
+            // Scroll to templates section
+            document.getElementById('templates').scrollIntoView({ behavior: 'smooth' });
+            
+            // Update filter tabs
+            document.querySelectorAll('.filter-tab').forEach(tab => {
+                tab.classList.remove('active');
+                if (tab.textContent.trim() === category || (category === 'Animated Templates' && tab.textContent.trim() === 'Animated')) {
+                    tab.classList.add('active');
+                }
+            });
+
+            // If 'All' is clicked or category not found, show all
+            if (category === 'All') {
+                document.querySelector('.filter-tab').classList.add('active');
+            }
+
+            showToast(`🔍 Showing ${category} templates`);
+        }
+
+        // Toast notification function
+        function showToast(message) {
+            // Remove existing toast
+            const existingToast = document.querySelector('.toast-notification');
+            if (existingToast) existingToast.remove();
+
+            // Create toast
+            const toast = document.createElement('div');
+            toast.className = 'toast-notification';
+            toast.innerHTML = `
+                <div class="toast-content">
+                    <span>${message}</span>
+                </div>
+            `;
+            document.body.appendChild(toast);
+
+            // Show toast
+            setTimeout(() => toast.classList.add('show'), 10);
+
+            // Hide after 3 seconds
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Generate random stats for templates
+        function generateRandomStats() {
+            document.querySelectorAll('.template-card').forEach(card => {
+                // Generate random views between 500 and 8000
+                const views = Math.floor(Math.random() * 7500) + 500;
+                // Generate random downloads between 30% and 70% of views
+                const downloads = Math.floor(views * (Math.random() * 0.4 + 0.3));
+                
+                // Format numbers
+                const formatNumber = (num) => {
+                    if (num >= 1000) {
+                        return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+                    }
+                    return num.toString();
+                };
+                
+                // Update the card
+                const viewsEl = card.querySelector('.views-count');
+                const downloadsEl = card.querySelector('.downloads-count');
+                
+                if (viewsEl) viewsEl.textContent = formatNumber(views);
+                if (downloadsEl) downloadsEl.textContent = formatNumber(downloads);
+            });
+        }
+
+        // Generate stats on page load
+        generateRandomStats();
+
+        // Filter tabs
+        document.querySelectorAll('.filter-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        // Smooth scroll
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

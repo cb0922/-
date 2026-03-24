@@ -1,0 +1,1 @@
+window.__bossSopHistoryHooked||(window.__bossSopHistoryHooked=!0);

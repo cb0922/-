@@ -1,0 +1,1 @@
+const getChromeApi=()=>globalThis.chrome;(()=>{const e=getChromeApi();if(!e?.runtime?.getURL)return void console.error("[Boss SOP] chrome.runtime.getURL not available.");const t=e.runtime.getURL("content/runtime/content-entry.js");import(t).catch((e=>{console.error("[Boss SOP] Failed to load runtime content entry",e)}))})();

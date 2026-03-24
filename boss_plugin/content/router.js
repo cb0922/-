@@ -1,0 +1,1 @@
+const t=async()=>{const t=globalThis.chrome;if(!t?.runtime?.getURL)return void console.error("[Boss SOP] chrome.runtime.getURL not available.");const e=t.runtime.getURL("content/runtime/router-entry.js"),o=await import(e);o?.startRuntimeContentRouter?.()};export{t as startContentRouter};

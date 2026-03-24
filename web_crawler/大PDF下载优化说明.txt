@@ -1,0 +1,153 @@
+========================================
+    大PDF下载优化说明
+========================================
+
+【问题描述】
+
+优化前：
+- 下载大PDF（>50MB）经常超时失败
+- 原因：一次性读取整个文件到内存，超时时间固定30秒
+
+优化后：
+- 流式下载，支持任意大小PDF
+- 不限制总时间，只限制单次读取时间
+
+【技术改进】
+
+1. 流式下载（Streaming）
+   
+   优化前：
+   content = await response.read()  # 一次性读取全部
+   
+   优化后：
+   chunk_size = 64 * 1024  # 64KB块
+   while True:
+       chunk = await response.content.read(chunk_size)
+       if not chunk:
+           break
+       f.write(chunk)
+
+2. 超时时间优化
+   
+   优化前：
+   timeout = 30秒（固定）
+   
+   优化后：
+   download_timeout = ClientTimeout(
+       total=None,      # 不限制总时间
+       connect=30,      # 连接超时30秒
+       sock_read=60     # 单次读取超时60秒
+   )
+
+3. 进度显示
+   
+   每下载5MB显示一次进度：
+   [PDF_DOWNLOAD] 已下载: 5MB
+   [PDF_DOWNLOAD] 已下载: 10MB
+   [PDF_DOWNLOAD] 已下载: 15MB
+   ...
+
+4. 错误处理增强
+   
+   - 下载失败自动清理未完成文件
+   - 显示友好错误信息
+   - 区分超时错误和其他错误
+
+【使用示例】
+
+场景1：下载100MB的大PDF
+----------------------------------------
+日志输出：
+  [PDF_DOWNLOAD] 开始下载: 大赛通知.pdf
+  [PDF_DOWNLOAD] 文件大小: 102.5 MB
+  [PDF_DOWNLOAD] 已下载: 5MB
+  [PDF_DOWNLOAD] 已下载: 10MB
+  ...
+  [PDF_DOWNLOAD] 已下载: 100MB
+  [PDF_DOWNLOAD] 下载完成: 102.5MB
+  [PDF_DOWNLOAD] 保存成功
+
+场景2：网络太慢导致超时
+----------------------------------------
+日志输出：
+  [PDF_DOWNLOAD] 开始下载: 大赛通知.pdf
+  [PDF_DOWNLOAD] 文件大小: 200MB
+  [PDF_DOWNLOAD] 已下载: 5MB
+  [PDF_DOWNLOAD] 已下载: 10MB
+  ...
+  [PDF_DOWNLOAD] 错误: 下载超时
+  [PDF_DOWNLOAD] 已清理未完成文件
+
+场景3：下载完成验证
+----------------------------------------
+  [DOWNLOAD_SUMMARY]
+    成功下载: 1
+    已存在: 0
+    失败: 0
+    总大小: 102.5MB
+
+【配置文件】
+
+如需调整参数，修改 core/pdf_handler.py：
+
+# 块大小（默认64KB）
+chunk_size = 64 * 1024
+
+# 进度显示间隔（默认5MB）
+if downloaded - last_print >= 5 * 1024 * 1024:
+    print(f"已下载: {downloaded} bytes")
+
+# 超时时间（默认不限制总时间）
+download_timeout = aiohttp.ClientTimeout(
+    total=None,      # 不限制总时间
+    connect=30,      # 连接超时
+    sock_read=60     # 读取超时
+)
+
+【测试方法】
+
+1. 准备大PDF链接
+   找一个大于50MB的PDF文件链接
+
+2. 添加到测试文件
+   创建 test_large_pdf.txt，写入：
+   url,name,category
+   https://example.com/large-file.pdf,大文件测试,
+
+3. 运行测试
+   python test_large_pdf.py
+
+4. 观察日志
+   - 是否显示文件大小
+   - 是否显示下载进度
+   - 是否成功完成
+
+【注意事项】
+
+1. 磁盘空间
+   - 确保磁盘有足够空间
+   - 下载前会显示文件大小
+
+2. 网络带宽
+   - 大文件下载需要稳定网络
+   - 如果网络慢，可能需要较长时间
+
+3. 内存占用
+   - 流式下载不会占用大量内存
+   - 即使下载1GB文件，内存占用也很低
+
+【故障排查】
+
+问题1：下载很慢
+- 原因：网络带宽不足
+- 解决：增加超时时间，或分批下载
+
+问题2：经常超时
+- 原因：网络不稳定
+- 解决：检查网络，或使用代理
+
+问题3：磁盘空间不足
+- 原因：磁盘满了
+- 解决：清理磁盘空间
+
+========================================

@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  web-crawler:
+    build: .
+    container_name: web-crawler
+    ports:
+      - "8000:8000"
+    volumes:
+      # 持久化上传的文件
+      - ./data/uploads:/app/web_server/uploads
+      # 持久化输出文件（报告、文档等）
+      - ./data/output:/app/web_server/output
+    environment:
+      - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s

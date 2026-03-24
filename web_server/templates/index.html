@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>比赛通知爬虫 - Web 控制台</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- 侧边栏 -->
+        <aside class="sidebar">
+            <div class="logo">
+                <i class="fas fa-spider"></i>
+                <span>爬虫控制台</span>
+            </div>
+            <nav class="nav-menu">
+                <a href="#" class="nav-item active" data-page="dashboard">
+                    <i class="fas fa-home"></i>
+                    <span>控制台</span>
+                </a>
+                <a href="#" class="nav-item" data-page="urls">
+                    <i class="fas fa-link"></i>
+                    <span>网址管理</span>
+                </a>
+                <a href="#" class="nav-item" data-page="crawler">
+                    <i class="fas fa-play-circle"></i>
+                    <span>爬取任务</span>
+                </a>
+                <a href="#" class="nav-item" data-page="reports">
+                    <i class="fas fa-file-alt"></i>
+                    <span>报告查看</span>
+                </a>
+                <a href="#" class="nav-item" data-page="documents">
+                    <i class="fas fa-download"></i>
+                    <span>文档下载</span>
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="status-indicator">
+                    <span class="status-dot online"></span>
+                    <span class="status-text">服务在线</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- 主内容区 -->
+        <main class="main-content">
+            <!-- 顶部栏 -->
+            <header class="header">
+                <h1 class="page-title">控制台</h1>
+                <div class="header-actions">
+                    <button class="btn btn-secondary" id="refreshBtn">
+                        <i class="fas fa-sync-alt"></i> 刷新
+                    </button>
+                </div>
+            </header>
+
+            <!-- 页面内容 -->
+            <div class="content">
+                <!-- 控制台页面 -->
+                <div class="page active" id="dashboard-page">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon blue">
+                                <i class="fas fa-link"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="stat-urls">0</h3>
+                                <p>网址数量</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon green">
+                                <i class="fas fa-tasks"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="stat-tasks">0</h3>
+                                <p>完成任务</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon orange">
+                                <i class="fas fa-file-download"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="stat-docs">0</h3>
+                                <p>文档数量</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon purple">
+                                <i class="fas fa-file-alt"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="stat-reports">0</h3>
+                                <p>报告数量</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-section">
+                        <h2>快速操作</h2>
+                        <div class="quick-actions">
+                            <button class="action-card" onclick="showPage('urls')">
+                                <i class="fas fa-plus-circle"></i>
+                                <span>添加网址</span>
+                            </button>
+                            <button class="action-card" onclick="showPage('crawler')">
+                                <i class="fas fa-play"></i>
+                                <span>开始爬取</span>
+                            </button>
+                            <button class="action-card" onclick="showPage('reports')">
+                                <i class="fas fa-eye"></i>
+                                <span>查看报告</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-section">
+                        <h2>最近任务</h2>
+                        <div class="task-list" id="recent-tasks">
+                            <p class="empty-state">暂无任务记录</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 网址管理页面 -->
+                <div class="page" id="urls-page">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>网址列表</h2>
+                            <div class="card-actions">
+                                <button class="btn btn-secondary" id="importBtn">
+                                    <i class="fas fa-file-import"></i> 导入文件
+                                </button>
+                                <button class="btn btn-primary" id="addUrlBtn">
+                                    <i class="fas fa-plus"></i> 添加网址
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="url-input-section">
+                                <div class="input-group">
+                                    <input type="text" id="newUrl" placeholder="输入网址 (例如: https://example.com/notice)">
+                                    <input type="text" id="newUrlName" placeholder="名称/备注 (可选)" style="width: 200px;">
+                                    <button class="btn btn-primary" id="quickAddBtn">添加</button>
+                                </div>
+                                <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" style="display: none;">
+                            </div>
+                            <div class="table-container">
+                                <table class="data-table" id="urlsTable">
+                                    <thead>
+                                        <tr>
+                                            <th>网址</th>
+                                            <th>名称</th>
+                                            <th>分类</th>
+                                            <th>操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="urlsTableBody">
+                                        <tr>
+                                            <td colspan="4" class="empty-cell">暂无数据</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 爬取任务页面 -->
+                <div class="page" id="crawler-page">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>爬取配置</h2>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label>爬取模式</label>
+                                <select id="crawlMode" class="form-control">
+                                    <option value="all">全部 (文档+报告)</option>
+                                    <option value="doc">仅下载文档</option>
+                                    <option value="html">仅生成报告</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="useDynamic">
+                                    <span>启用动态渲染 (Playwright) - 用于SPA网站</span>
+                                </label>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>超时时间 (秒)</label>
+                                    <input type="number" id="timeout" class="form-control" value="30" min="10" max="300">
+                                </div>
+                                <div class="form-group">
+                                    <label>最大重试次数</label>
+                                    <input type="number" id="maxRetries" class="form-control" value="3" min="1" max="10">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="autoRemove">
+                                    <span>自动删除失败网址 (达到最大重试次数后)</span>
+                                </label>
+                            </div>
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="useProxy">
+                                    <span>使用代理</span>
+                                </label>
+                            </div>
+                            <button class="btn btn-primary btn-lg" id="startCrawlBtn">
+                                <i class="fas fa-play"></i> 开始爬取
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="card" id="progressCard" style="display: none;">
+                        <div class="card-header">
+                            <h2>爬取进度</h2>
+                        </div>
+                        <div class="card-body">
+                            <div class="progress-container">
+                                <div class="progress-info">
+                                    <span id="progressStatus">准备就绪</span>
+                                    <span id="progressPercent">0%</span>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                                </div>
+                                <p class="progress-message" id="progressMessage">等待开始...</p>
+                            </div>
+                            <div class="log-container" id="logContainer">
+                                <div class="log-content" id="logContent"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 报告查看页面 -->
+                <div class="page" id="reports-page">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>报告列表</h2>
+                            <div class="card-actions">
+                                <button class="btn btn-secondary" id="refreshReportsBtn">
+                                    <i class="fas fa-sync-alt"></i> 刷新
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="reports-grid" id="reportsGrid">
+                                <p class="empty-state">暂无报告</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 文档下载页面 -->
+                <div class="page" id="documents-page">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>下载的文档</h2>
+                            <div class="card-actions">
+                                <button class="btn btn-secondary" id="refreshDocsBtn">
+                                    <i class="fas fa-sync-alt"></i> 刷新
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="documents-list" id="documentsList">
+                                <p class="empty-state">暂无文档</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Toast 通知 -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

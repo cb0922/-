@@ -1,0 +1,43 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 数据文件（避免打包到镜像中）
+data/
+output/
+uploads/
+*.csv
+*.json
+*.xlsx
+*.xls
+
+# 日志
+*.log
+logs/
+
+# 测试
+test_output/
+test_*.py
+
+# 其他
+*.md
+!web_server/requirements.txt
+*.crx
+boss_plugin/
+仓库/
