@@ -57,9 +57,10 @@ class CrawlConfig(BaseModel):
     proxy_file: Optional[str] = None
     max_retries: int = 3
     auto_remove_failed: bool = False
-    # 新增：日期过滤配置
+    # 新增：日期范围过滤配置
     filter_by_date: bool = False  # 是否启用日期过滤
-    start_date: Optional[str] = None  # 格式：YYYY-MM-DD，只抓取该日期之后的通知
+    start_date: Optional[str] = None  # 格式：YYYY-MM-DD，抓取该日期及之后的内容
+    end_date: Optional[str] = None    # 格式：YYYY-MM-DD，抓取该日期及之前的内容（可选）
 
 
 class TaskStatus(BaseModel):
@@ -145,14 +146,31 @@ def extract_date_from_html(html_content: str) -> Optional[datetime]:
     return None
 
 
-def is_date_after_filter(content_date: Optional[datetime], filter_date: Optional[datetime]) -> bool:
-    """判断内容日期是否在过滤日期之后（含当天）"""
-    if not filter_date:
-        return True  # 没有设置过滤日期，全部通过
+def is_date_in_range(content_date: Optional[datetime], 
+                     start_date: Optional[datetime], 
+                     end_date: Optional[datetime]) -> bool:
+    """判断内容日期是否在指定范围内
+    
+    Args:
+        content_date: 内容中的日期
+        start_date: 开始日期（包含）
+        end_date: 结束日期（包含），None表示不限制
+    
+    Returns:
+        是否在范围内
+    """
     if not content_date:
         return True  # 无法提取日期，默认通过
     
-    return content_date >= filter_date
+    # 检查开始日期
+    if start_date and content_date < start_date:
+        return False  # 早于开始日期，跳过
+    
+    # 检查结束日期
+    if end_date and content_date > end_date:
+        return False  # 晚于结束日期，跳过
+    
+    return True
 
 
 # ============ FastAPI 应用 ============
@@ -244,14 +262,31 @@ async def run_crawl_task(task_id: str, urls: List[Dict], config: CrawlConfig):
     task["total"] = len(urls)
     task["logs"] = []
     
-    # 解析过滤日期
-    filter_date = None
-    if config.filter_by_date and config.start_date:
-        try:
-            filter_date = datetime.strptime(config.start_date, "%Y-%m-%d")
+    # 解析日期范围
+    start_date = None
+    end_date = None
+    if config.filter_by_date:
+        if config.start_date:
+            try:
+                start_date = datetime.strptime(config.start_date, "%Y-%m-%d")
+            except ValueError:
+                add_log(task_id, "warning", f"⚠️ 开始日期格式错误: {config.start_date}")
+        
+        if config.end_date:
+            try:
+                end_date = datetime.strptime(config.end_date, "%Y-%m-%d")
+            except ValueError:
+                add_log(task_id, "warning", f"⚠️ 结束日期格式错误: {config.end_date}")
+        
+        # 显示过滤范围
+        if start_date and end_date:
+            add_log(task_id, "info", f"📅 启用日期过滤: {config.start_date} 至 {config.end_date}")
+        elif start_date:
             add_log(task_id, "info", f"📅 启用日期过滤: {config.start_date} 及以后")
-        except ValueError:
-            add_log(task_id, "warning", f"⚠️ 日期格式错误: {config.start_date}，将抓取所有")
+        elif end_date:
+            add_log(task_id, "info", f"📅 启用日期过滤: {config.end_date} 及以前")
+        else:
+            add_log(task_id, "warning", "⚠️ 日期过滤已启用但未设置日期范围")
     
     add_log(task_id, "info", f"🚀 启动爬虫任务，共 {len(urls)} 个网址")
     add_log(task_id, "info", f"📋 爬取模式: {config.mode}, 动态渲染: {config.use_dynamic}")
@@ -311,11 +346,18 @@ async def run_crawl_task(task_id: str, urls: List[Dict], config: CrawlConfig):
                 # 提取页面日期
                 page_date = extract_date_from_html(html_content)
                 
-                # 检查日期过滤
-                if config.filter_by_date and filter_date:
-                    if not is_date_after_filter(page_date, filter_date):
+                # 检查日期范围过滤
+                if config.filter_by_date and (start_date or end_date):
+                    if not is_date_in_range(page_date, start_date, end_date):
                         date_str = page_date.strftime("%Y-%m-%d") if page_date else "未知"
-                        add_log(task_id, "warning", f"⏭️ 跳过(日期过滤): {date_str} < {config.start_date}", url)
+                        range_str = ""
+                        if start_date and end_date:
+                            range_str = f"不在 {config.start_date} 至 {config.end_date} 范围内"
+                        elif start_date:
+                            range_str = f"早于 {config.start_date}"
+                        elif end_date:
+                            range_str = f"晚于 {config.end_date}"
+                        add_log(task_id, "warning", f"⏭️ 跳过(日期过滤): {date_str} {range_str}", url)
                         skipped_by_date += 1
                         continue
                 
@@ -326,18 +368,19 @@ async def run_crawl_task(task_id: str, urls: List[Dict], config: CrawlConfig):
                 # 提取所有文档链接（支持所有格式）
                 documents = doc_handler.extract_document_links(html_content, url, title)
                 
-                # 按日期过滤文档
-                if config.filter_by_date and filter_date:
+                # 按日期范围过滤文档
+                if config.filter_by_date and (start_date or end_date):
                     filtered_docs = []
                     for doc in documents:
                         # 尝试从文件名或链接文本提取日期
                         doc_date = extract_date_from_text(doc.get("filename", "")) or \
                                    extract_date_from_text(doc.get("link_text", ""))
                         
-                        if is_date_after_filter(doc_date, filter_date):
+                        if is_date_in_range(doc_date, start_date, end_date):
                             filtered_docs.append(doc)
                         else:
-                            add_log(task_id, "warning", f"⏭️ 跳过文档(日期过滤): {doc.get('filename', '')[:30]}...")
+                            doc_date_str = doc_date.strftime("%Y-%m-%d") if doc_date else "未知"
+                            add_log(task_id, "warning", f"⏭️ 跳过文档(日期过滤): {doc.get('filename', '')[:30]}... ({doc_date_str})")
                     
                     documents = filtered_docs
                 

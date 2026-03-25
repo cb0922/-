@@ -290,9 +290,10 @@ async function startCrawl() {
         use_proxy: document.getElementById('useProxy').checked,
         max_retries: parseInt(document.getElementById('maxRetries').value),
         auto_remove_failed: document.getElementById('autoRemove').checked,
-        // 新增：日期过滤配置
+        // 新增：日期范围过滤配置
         filter_by_date: document.getElementById('filterByDate').checked,
-        start_date: document.getElementById('startDate').value
+        start_date: document.getElementById('startDate').value,
+        end_date: document.getElementById('endDate').value || null
     };
     
     try {
