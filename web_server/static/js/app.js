@@ -1,5 +1,5 @@
 /**
- * Web Crawler Web App
+ * Web Crawler Web App - 增强版（带实时日志）
  * 前端 JavaScript 控制器
  */
 
@@ -9,6 +9,8 @@ const API_BASE = '';
 // 当前任务 ID
 let currentTaskId = null;
 let statusCheckInterval = null;
+let logsCheckInterval = null;
+let lastLogOffset = 0;
 
 // ===== 页面初始化 =====
 document.addEventListener('DOMContentLoaded', () => {
@@ -289,15 +291,22 @@ async function startCrawl() {
         });
         
         currentTaskId = result.task_id;
+        lastLogOffset = 0;
         showToast('爬虫任务已启动', 'success');
         
         // 显示进度卡片
         document.getElementById('progressCard').style.display = 'block';
         document.getElementById('startCrawlBtn').disabled = true;
-        document.getElementById('logContent').textContent = '';
+        
+        // 清空日志显示
+        const logContent = document.getElementById('logContent');
+        if (logContent) {
+            logContent.innerHTML = '';
+        }
         
         // 开始检查状态
         startStatusCheck();
+        startLogsCheck();
         
     } catch (error) {
         // 错误已在 apiRequest 中处理
@@ -318,6 +327,7 @@ function startStatusCheck() {
             
             if (status.status === 'completed' || status.status === 'failed') {
                 clearInterval(statusCheckInterval);
+                clearInterval(logsCheckInterval);
                 document.getElementById('startCrawlBtn').disabled = false;
                 
                 if (status.status === 'completed') {
@@ -336,23 +346,74 @@ function startStatusCheck() {
     }, 2000);
 }
 
+function startLogsCheck() {
+    if (logsCheckInterval) {
+        clearInterval(logsCheckInterval);
+    }
+    
+    // 立即获取一次日志
+    fetchNewLogs();
+    
+    // 定期获取新日志
+    logsCheckInterval = setInterval(fetchNewLogs, 1000);
+}
+
+async function fetchNewLogs() {
+    if (!currentTaskId) return;
+    
+    try {
+        const response = await apiRequest(`/api/crawl/logs/${currentTaskId}?offset=${lastLogOffset}&limit=50`);
+        
+        if (response.logs && response.logs.length > 0) {
+            appendLogsToDisplay(response.logs);
+            lastLogOffset += response.logs.length;
+        }
+    } catch (error) {
+        console.error('获取日志失败:', error);
+    }
+}
+
+function appendLogsToDisplay(logs) {
+    const logContent = document.getElementById('logContent');
+    if (!logContent) return;
+    
+    logs.forEach(log => {
+        const logLine = document.createElement('div');
+        logLine.className = `log-line log-${log.level}`;
+        
+        // 根据日志级别添加图标
+        let icon = 'ℹ️';
+        if (log.level === 'success') icon = '✅';
+        if (log.level === 'error') icon = '❌';
+        if (log.level === 'warning') icon = '⚠️';
+        
+        logLine.innerHTML = `<span class="log-time">[${log.timestamp}]</span> <span class="log-icon">${icon}</span> <span class="log-message">${escapeHtml(log.message)}</span>`;
+        
+        logContent.appendChild(logLine);
+    });
+    
+    // 自动滚动到底部
+    logContent.scrollTop = logContent.scrollHeight;
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 function updateProgress(status) {
     const percent = status.total > 0 ? Math.round((status.progress / status.total) * 100) : 0;
     
-    document.getElementById('progressStatus').textContent = getStatusText(status.status);
-    document.getElementById('progressPercent').textContent = `${percent}%`;
-    document.getElementById('progressFill').style.width = `${percent}%`;
-    document.getElementById('progressMessage').textContent = status.message;
+    const progressStatus = document.getElementById('progressStatus');
+    const progressPercent = document.getElementById('progressPercent');
+    const progressFill = document.getElementById('progressFill');
+    const progressMessage = document.getElementById('progressMessage');
     
-    // 添加日志
-    if (status.message) {
-        const logContent = document.getElementById('logContent');
-        const timestamp = new Date().toLocaleTimeString();
-        const logClass = status.status === 'failed' ? 'error' : 
-                        status.status === 'completed' ? 'success' : 'info';
-        logContent.innerHTML += `[${timestamp}] <span class="${logClass}">${status.message}</span>\n`;
-        logContent.scrollTop = logContent.scrollHeight;
-    }
+    if (progressStatus) progressStatus.textContent = getStatusText(status.status);
+    if (progressPercent) progressPercent.textContent = `${percent}%`;
+    if (progressFill) progressFill.style.width = `${percent}%`;
+    if (progressMessage) progressMessage.textContent = status.message;
 }
 
 // ===== 报告管理 =====

@@ -454,10 +454,37 @@ body {
     line-height: 1.6;
 }
 
-.log-content .success { color: var(--success-color); }
-.log-content .error { color: var(--danger-color); }
-.log-content .warning { color: var(--warning-color); }
-.log-content .info { color: var(--info-color); }
+/* 日志行样式 */
+.log-line {
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.log-line:last-child {
+    border-bottom: none;
+}
+
+.log-time {
+    color: #64748b;
+    flex-shrink: 0;
+}
+
+.log-icon {
+    flex-shrink: 0;
+}
+
+.log-message {
+    flex: 1;
+    word-break: break-all;
+}
+
+.log-info { color: #e2e8f0; }
+.log-success { color: #4ade80; }
+.log-error { color: #f87171; }
+.log-warning { color: #fbbf24; }
 
 /* ===== 报告网格 ===== */
 .reports-grid {
