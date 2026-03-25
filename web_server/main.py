@@ -420,23 +420,43 @@ async def run_crawl_task(task_id: str, urls: List[Dict], config: CrawlConfig):
                     if config.mode in ["all", "doc"]:
                         add_log(task_id, "info", f"📥 开始下载 {len(documents)} 个文档...", url)
                         
-                        # 逐个下载并记录
-                        for doc in documents:
-                            try:
-                                import aiohttp
-                                async with aiohttp.ClientSession() as session:
-                                    result = await doc_handler.download_document(
-                                        session, doc, notice_title=title
-                                    )
-                                    if result.get("downloaded"):
-                                        size = result.get("size", 0)
-                                        filename = result.get("local_filename", "")
-                                        add_log(task_id, "success", f"✅ 下载: {filename} ({format_file_size(size)})")
-                                        total_docs_downloaded += 1
-                                    elif result.get("error"):
-                                        add_log(task_id, "error", f"❌ 下载失败: {result.get('error')[:50]}")
-                            except Exception as e:
-                                add_log(task_id, "error", f"❌ 下载异常: {str(e)[:50]}")
+                        # 使用 document_handler 的批量下载方法
+                        try:
+                            import aiohttp
+                            timeout = aiohttp.ClientTimeout(total=120, connect=30, sock_read=60)
+                            
+                            async with aiohttp.ClientSession(timeout=timeout) as session:
+                                # 限制并发数
+                                semaphore = asyncio.Semaphore(3)
+                                
+                                async def download_single(doc):
+                                    async with semaphore:
+                                        try:
+                                            result = await doc_handler.download_document(
+                                                session, doc, notice_title=title
+                                            )
+                                            return result
+                                        except Exception as e:
+                                            return {"error": str(e)}
+                                
+                                # 并发下载
+                                tasks = [download_single(doc) for doc in documents]
+                                download_results = await asyncio.gather(*tasks, return_exceptions=True)
+                                
+                                # 处理结果
+                                for result in download_results:
+                                    if isinstance(result, Exception):
+                                        add_log(task_id, "error", f"❌ 下载异常: {str(result)[:50]}")
+                                    elif isinstance(result, dict):
+                                        if result.get("downloaded"):
+                                            size = result.get("size", 0)
+                                            filename = result.get("local_filename", "")
+                                            add_log(task_id, "success", f"✅ 下载: {filename} ({format_file_size(size)})")
+                                            total_docs_downloaded += 1
+                                        elif result.get("error"):
+                                            add_log(task_id, "error", f"❌ 下载失败: {result.get('error')[:50]}")
+                        except Exception as e:
+                            add_log(task_id, "error", f"❌ 文档下载异常: {str(e)[:50]}")
                 
                 results.append({
                     "url": url,
@@ -466,15 +486,36 @@ async def run_crawl_task(task_id: str, urls: List[Dict], config: CrawlConfig):
             return
         
         # 生成报告
+        report_path = None
+        word_path = None
+        
         if config.mode in ["all", "html"]:
             add_log(task_id, "info", "📝 正在生成 HTML 报告...")
-            os.makedirs(str(OUTPUT_DIR / "reports"), exist_ok=True)
-            add_log(task_id, "success", "✅ HTML 报告生成完成")
+            try:
+                from report_generator_v3 import ReportGenerator
+                os.makedirs(str(OUTPUT_DIR / "reports"), exist_ok=True)
+                generator = ReportGenerator(results, output_dir=str(OUTPUT_DIR / "reports"))
+                report_path = generator.generate()
+                add_log(task_id, "success", f"✅ HTML 报告: {os.path.basename(report_path)}")
+            except Exception as e:
+                add_log(task_id, "error", f"❌ HTML 报告生成失败: {str(e)[:50]}")
         
         # 生成 Word 报告
         add_log(task_id, "info", "📄 正在生成 Word 文档...")
-        os.makedirs(str(OUTPUT_DIR / "word_reports"), exist_ok=True)
-        add_log(task_id, "success", "✅ Word 文档生成完成")
+        try:
+            from word_generator import NoticeWordGenerator
+            os.makedirs(str(OUTPUT_DIR / "word_reports"), exist_ok=True)
+            word_gen = NoticeWordGenerator(output_dir=str(OUTPUT_DIR / "word_reports"))
+            
+            # 过滤出有比赛相关内容的页面
+            competition_results = [r for r in results if r.get("documents")]
+            if competition_results:
+                word_path = word_gen.generate(competition_results)
+                add_log(task_id, "success", f"✅ Word 报告: {os.path.basename(word_path)}")
+            else:
+                add_log(task_id, "warning", "⚠️ 没有比赛相关内容，跳过 Word 生成")
+        except Exception as e:
+            add_log(task_id, "error", f"❌ Word 生成失败: {str(e)[:50]}")
         
         # 更新任务状态
         task["status"] = "completed"
@@ -486,9 +527,17 @@ async def run_crawl_task(task_id: str, urls: List[Dict], config: CrawlConfig):
             "fail_count": fail_count,
             "skipped_by_date": skipped_by_date,
             "total_documents_found": total_docs_found,
-            "total_documents_downloaded": total_docs_downloaded
+            "total_documents_downloaded": total_docs_downloaded,
+            "report_path": report_path,
+            "word_path": word_path
         }
+        
+        # 显示下载链接
         add_log(task_id, "success", f"🎉 任务完成! 成功 {success_count}, 失败 {fail_count}, 文档 {total_docs_downloaded}")
+        if report_path:
+            add_log(task_id, "info", f"📄 HTML报告: /output/reports/{os.path.basename(report_path)}")
+        if word_path:
+            add_log(task_id, "info", f"📄 Word报告: /output/word_reports/{os.path.basename(word_path)}")
         
     except Exception as e:
         task["status"] = "failed"
