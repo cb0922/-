@@ -821,15 +821,19 @@ async def list_documents():
     docs_dir = OUTPUT_DIR / "documents"
     
     if docs_dir.exists():
+        # 使用 rglob 递归搜索子目录 (PDF/, Word/, Excel/ 等)
         for ext in ["*.pdf", "*.doc", "*.docx", "*.xls", "*.xlsx", "*.ppt", "*.pptx", 
                     "*.zip", "*.rar", "*.txt", "*.wps", "*.et", "*.dps"]:
-            for f in docs_dir.glob(ext):
+            for f in docs_dir.rglob(ext):
                 stat = f.stat()
+                # 计算相对路径用于URL
+                rel_path = f.relative_to(OUTPUT_DIR)
                 docs.append({
                     "name": f.name,
-                    "path": f"/output/documents/{f.name}",
+                    "path": f"/output/{rel_path}",
                     "size": stat.st_size,
                     "type": f.suffix.lower(),
+                    "category": f.parent.name if f.parent != docs_dir else "其他",
                     "created": datetime.fromtimestamp(stat.st_mtime).isoformat()
                 })
     
