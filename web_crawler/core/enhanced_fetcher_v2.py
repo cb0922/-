@@ -44,11 +44,13 @@ class EnhancedFetcherV2:
     """增强版异步抓取器"""
     
     def __init__(self, timeout: int = 30, max_retries: int = 3, 
-                 use_proxy: bool = False, proxy_file: str = None):
+                 use_proxy: bool = False, proxy_file: str = None,
+                 headers: dict = None):  # 添加 headers 参数保持兼容
         self.timeout = aiohttp.ClientTimeout(total=timeout, connect=10, sock_read=timeout)
         self.max_retries = max_retries
         self.use_proxy = use_proxy
         self.proxies = []
+        self.headers = headers or get_random_headers()  # 保存 headers
         
         # SSL 上下文
         self.ssl_context = ssl.create_default_context(cafile=certifi.where())

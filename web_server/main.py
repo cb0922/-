@@ -330,7 +330,6 @@ async def run_crawl_task(task_id: str, urls: List[Dict], config: CrawlConfig):
                 # 创建抓取器
                 fetcher = AsyncFetcher(
                     timeout=config.timeout,
-                    headers=get_random_headers(),
                     use_proxy=config.use_proxy,
                     proxy_file=config.proxy_file or "proxies.json"
                 )
