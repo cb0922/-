@@ -25,7 +25,14 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'web_crawler'))
 
 from enhanced_crawler_v3 import EnhancedCompetitionCrawlerV3
 from core.url_manager import URLManager
-from core.fetcher import AsyncFetcher, get_random_headers
+# 尝试使用增强版 fetcher，如果失败则使用原版
+try:
+    from core.enhanced_fetcher_v2 import AsyncFetcher, get_random_headers
+    print("[INFO] 使用增强版 Fetcher V2")
+except ImportError:
+    from core.fetcher import AsyncFetcher, get_random_headers
+    print("[INFO] 使用标准版 Fetcher")
+
 from core.parser import ContentParser
 from core.document_handler import DocumentHandler
 
@@ -334,7 +341,25 @@ async def run_crawl_task(task_id: str, urls: List[Dict], config: CrawlConfig):
                 
                 if not fetch_result or not fetch_result.get("success"):
                     error = fetch_result.get('error', '无响应') if fetch_result else '无响应'
-                    add_log(task_id, "error", f"❌ 抓取失败: {error}", url)
+                    error_type = fetch_result.get('error_type', 'unknown') if fetch_result else 'unknown'
+                    suggestion = fetch_result.get('suggestion', '') if fetch_result else ''
+                    
+                    # 根据错误类型显示不同图标
+                    icon = "❌"
+                    if error_type == 'dns_error':
+                        icon = "🌐"
+                    elif error_type == 'timeout':
+                        icon = "⏱️"
+                    elif error_type == 'http_403':
+                        icon = "🚫"
+                    elif error_type == 'http_500':
+                        icon = "🔥"
+                    
+                    log_msg = f"{icon} 抓取失败: {error}"
+                    if suggestion:
+                        log_msg += f" [{suggestion}]"
+                    
+                    add_log(task_id, "error", log_msg, url)
                     fail_count += 1
                     continue
                 

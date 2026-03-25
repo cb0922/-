@@ -238,6 +238,20 @@
                             <button class="btn btn-primary btn-lg" id="startCrawlBtn">
                                 <i class="fas fa-play"></i> 开始爬取
                             </button>
+                            
+                            <!-- 抓取优化提示 -->
+                            <div class="form-group mt-3" style="background: #f0f9ff; padding: 15px; border-radius: 8px; border-left: 4px solid #3b82f6;">
+                                <h4 style="margin: 0 0 10px 0; font-size: 14px; color: #1e40af;">
+                                    <i class="fas fa-lightbulb"></i> 抓取优化建议
+                                </h4>
+                                <ul style="margin: 0; padding-left: 20px; font-size: 13px; color: #334155; line-height: 1.8;">
+                                    <li><strong>DNS/连接错误：</strong>部分政府网站域名已变更或关闭，属于正常现象</li>
+                                    <li><strong>403 错误：</strong>网站有反爬机制，可增加超时时间或开启代理</li>
+                                    <li><strong>超时错误：</strong>建议将超时时间设置为 45-60 秒</li>
+                                    <li><strong>500 错误：</strong>网站服务器问题，可稍后重试</li>
+                                    <li><strong>建议配置：</strong>超时 45秒 + 重试3次 + 延迟1-2秒</li>
+                                </ul>
+                            </div>
                         </div>
                     </div>
 
