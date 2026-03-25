@@ -1,16 +1,15 @@
 #!/usr/bin/env python3
 """
 Web Crawler Web Server
-基于 FastAPI 的爬虫 Web 服务 - 增强版（带实时日志）
+基于 FastAPI 的爬虫 Web 服务 - 增强版（带实时日志和日期过滤）
 """
 import os
 import sys
 import json
 import asyncio
 import shutil
-import threading
-import queue
-from datetime import datetime
+import re
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import List, Dict, Optional
 from contextlib import asynccontextmanager
@@ -26,6 +25,9 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'web_crawler'))
 
 from enhanced_crawler_v3 import EnhancedCompetitionCrawlerV3
 from core.url_manager import URLManager
+from core.fetcher import AsyncFetcher, get_random_headers
+from core.parser import ContentParser
+from core.document_handler import DocumentHandler
 
 # ============ 配置 ============
 BASE_DIR = Path(__file__).parent
@@ -55,6 +57,9 @@ class CrawlConfig(BaseModel):
     proxy_file: Optional[str] = None
     max_retries: int = 3
     auto_remove_failed: bool = False
+    # 新增：日期过滤配置
+    filter_by_date: bool = False  # 是否启用日期过滤
+    start_date: Optional[str] = None  # 格式：YYYY-MM-DD，只抓取该日期之后的通知
 
 
 class TaskStatus(BaseModel):
@@ -68,30 +73,103 @@ class TaskStatus(BaseModel):
     result: Optional[Dict] = None
 
 
-class CrawlLog(BaseModel):
-    timestamp: str
-    level: str  # info, success, warning, error
-    message: str
-    url: Optional[str] = None
+# ============ 日期提取工具函数 ============
+def extract_date_from_text(text: str) -> Optional[datetime]:
+    """从文本中提取日期
+    
+    支持格式：
+    - 2026年3月15日
+    - 2026-03-15
+    - 2026/03/15
+    - 2026.03.15
+    - 2026-03
+    - 2026年3月
+    """
+    if not text:
+        return None
+    
+    text = str(text)
+    
+    # 匹配模式
+    patterns = [
+        # 2026年3月15日 或 2026年03月15日
+        r'(\d{4})年(\d{1,2})月(\d{1,2})日',
+        # 2026-03-15 或 2026/03/15 或 2026.03.15
+        r'(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})',
+        # 2026-03 或 2026/03 或 2026.03 或 2026年3月
+        r'(\d{4})[-/.年](\d{1,2})(?:月)?',
+    ]
+    
+    for pattern in patterns:
+        match = re.search(pattern, text)
+        if match:
+            try:
+                year = int(match.group(1))
+                month = int(match.group(2))
+                day = int(match.group(3)) if len(match.groups()) > 2 else 1
+                
+                # 验证日期合法性
+                return datetime(year, month, day)
+            except (ValueError, IndexError):
+                continue
+    
+    return None
+
+
+def extract_date_from_html(html_content: str) -> Optional[datetime]:
+    """从HTML中提取发布日期"""
+    if not html_content:
+        return None
+    
+    # 1. 查找常见的日期标签和属性
+    date_patterns = [
+        # <span class="date">2026-03-15</span>
+        r'<[^>]*(?:date|time|publish)[^>]*>([^<]+)</[^>]*>',
+        # 发布日期：2026-03-15
+        r'(?:发布日期|发布时间|日期)[：:]\s*([\d\-年/月日\.]+)',
+        # 时间：2026年3月15日
+        r'时间[：:]\s*([\d\-年/月日\.]+)',
+        # data-date属性
+        r'data-date=["\']([^"\']+)["\']',
+        # meta标签中的日期
+        r'<meta[^>]*(?:date|time)[^>]*content=["\']([^"\']+)["\']',
+    ]
+    
+    for pattern in date_patterns:
+        matches = re.findall(pattern, html_content, re.IGNORECASE)
+        for match in matches:
+            date = extract_date_from_text(match.strip())
+            if date:
+                return date
+    
+    return None
+
+
+def is_date_after_filter(content_date: Optional[datetime], filter_date: Optional[datetime]) -> bool:
+    """判断内容日期是否在过滤日期之后（含当天）"""
+    if not filter_date:
+        return True  # 没有设置过滤日期，全部通过
+    if not content_date:
+        return True  # 无法提取日期，默认通过
+    
+    return content_date >= filter_date
 
 
 # ============ FastAPI 应用 ============
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """应用生命周期管理"""
-    # 启动时创建必要的目录
     (OUTPUT_DIR / "documents").mkdir(exist_ok=True)
     (OUTPUT_DIR / "reports").mkdir(exist_ok=True)
     (OUTPUT_DIR / "word_reports").mkdir(exist_ok=True)
     (OUTPUT_DIR / "data").mkdir(exist_ok=True)
     yield
-    # 清理资源
 
 
 app = FastAPI(
     title="Web Crawler API",
     description="网页爬虫 Web 服务 API",
-    version="2.1.0",
+    version="2.2.0",
     lifespan=lifespan
 )
 
@@ -151,13 +229,12 @@ def add_log(task_id: str, level: str, message: str, url: str = None):
     
     task["logs"].append(log_entry)
     
-    # 限制日志数量，保留最近 500 条
     if len(task["logs"]) > 500:
         task["logs"] = task["logs"][-500:]
 
 
 async def run_crawl_task(task_id: str, urls: List[Dict], config: CrawlConfig):
-    """后台执行爬虫任务 - 带详细日志"""
+    """后台执行爬虫任务 - 带详细日志和日期过滤"""
     task = crawl_tasks.get(task_id)
     if not task:
         return
@@ -167,6 +244,15 @@ async def run_crawl_task(task_id: str, urls: List[Dict], config: CrawlConfig):
     task["total"] = len(urls)
     task["logs"] = []
     
+    # 解析过滤日期
+    filter_date = None
+    if config.filter_by_date and config.start_date:
+        try:
+            filter_date = datetime.strptime(config.start_date, "%Y-%m-%d")
+            add_log(task_id, "info", f"📅 启用日期过滤: {config.start_date} 及以后")
+        except ValueError:
+            add_log(task_id, "warning", f"⚠️ 日期格式错误: {config.start_date}，将抓取所有")
+    
     add_log(task_id, "info", f"🚀 启动爬虫任务，共 {len(urls)} 个网址")
     add_log(task_id, "info", f"📋 爬取模式: {config.mode}, 动态渲染: {config.use_dynamic}")
     
@@ -174,12 +260,20 @@ async def run_crawl_task(task_id: str, urls: List[Dict], config: CrawlConfig):
         # 创建爬虫实例
         urls_file = str(UPLOAD_DIR / f"urls_{task_id}.csv")
         save_urls_to_csv([URLItem(**u) for u in urls], Path(urls_file))
-        add_log(task_id, "info", f"💾 URL 列表已保存")
+        
+        # 初始化文档处理器
+        doc_handler = DocumentHandler(
+            timeout=config.timeout,
+            output_dir=str(OUTPUT_DIR / "documents")
+        )
         
         # 逐个爬取并记录日志
         results = []
         success_count = 0
         fail_count = 0
+        skipped_by_date = 0
+        total_docs_found = 0
+        total_docs_downloaded = 0
         
         for idx, url_item in enumerate(urls, 1):
             url = url_item.get("url") if isinstance(url_item, dict) else url_item
@@ -191,11 +285,7 @@ async def run_crawl_task(task_id: str, urls: List[Dict], config: CrawlConfig):
             add_log(task_id, "info", f"[{idx}/{len(urls)}] 开始抓取: {name or url[:50]}", url)
             
             try:
-                # 创建单个爬虫实例
-                from core.fetcher import AsyncFetcher, get_random_headers
-                from core.parser import ContentParser
-                from core.document_handler import DocumentHandler
-                
+                # 创建抓取器
                 fetcher = AsyncFetcher(
                     timeout=config.timeout,
                     headers=get_random_headers(),
@@ -203,12 +293,12 @@ async def run_crawl_task(task_id: str, urls: List[Dict], config: CrawlConfig):
                     proxy_file=config.proxy_file or "proxies.json"
                 )
                 
-                # 爬取单个 URL
+                # 爬取页面
                 fetch_results = await fetcher.fetch_all([{"url": url}])
                 fetch_result = fetch_results[0] if fetch_results else None
                 
                 if not fetch_result or not fetch_result.get("success"):
-                    error = fetch_result.get('error', '未知错误') if fetch_result else '无响应'
+                    error = fetch_result.get('error', '无响应') if fetch_result else '无响应'
                     add_log(task_id, "error", f"❌ 抓取失败: {error}", url)
                     fail_count += 1
                     continue
@@ -218,32 +308,75 @@ async def run_crawl_task(task_id: str, urls: List[Dict], config: CrawlConfig):
                 parser = ContentParser(html_content)
                 title = parser.get_title() or fetch_result.get("title", "无标题")
                 
+                # 提取页面日期
+                page_date = extract_date_from_html(html_content)
+                
+                # 检查日期过滤
+                if config.filter_by_date and filter_date:
+                    if not is_date_after_filter(page_date, filter_date):
+                        date_str = page_date.strftime("%Y-%m-%d") if page_date else "未知"
+                        add_log(task_id, "warning", f"⏭️ 跳过(日期过滤): {date_str} < {config.start_date}", url)
+                        skipped_by_date += 1
+                        continue
+                
                 add_log(task_id, "success", f"✅ 抓取成功: {title[:50]}", url)
+                if page_date:
+                    add_log(task_id, "info", f"📅 发布日期: {page_date.strftime('%Y-%m-%d')}", url)
                 
-                # 检查是否比赛相关
-                text_preview = parser.get_text()[:500]
-                is_competition = crawler.is_competition_related(title, text_preview) if 'crawler' in locals() else False
-                
-                if is_competition:
-                    add_log(task_id, "info", f"🏆 检测到比赛相关内容", url)
-                
-                # 提取文档链接
-                doc_handler = DocumentHandler(timeout=config.timeout, output_dir=str(OUTPUT_DIR / "documents"))
+                # 提取所有文档链接（支持所有格式）
                 documents = doc_handler.extract_document_links(html_content, url, title)
                 
+                # 按日期过滤文档
+                if config.filter_by_date and filter_date:
+                    filtered_docs = []
+                    for doc in documents:
+                        # 尝试从文件名或链接文本提取日期
+                        doc_date = extract_date_from_text(doc.get("filename", "")) or \
+                                   extract_date_from_text(doc.get("link_text", ""))
+                        
+                        if is_date_after_filter(doc_date, filter_date):
+                            filtered_docs.append(doc)
+                        else:
+                            add_log(task_id, "warning", f"⏭️ 跳过文档(日期过滤): {doc.get('filename', '')[:30]}...")
+                    
+                    documents = filtered_docs
+                
                 if documents:
+                    total_docs_found += len(documents)
                     doc_types = {}
                     for d in documents:
                         t = d.get('doc_type', 'Other')
                         doc_types[t] = doc_types.get(t, 0) + 1
                     add_log(task_id, "info", f"📄 发现 {len(documents)} 个文档: {doc_types}", url)
+                    
+                    # 下载文档
+                    if config.mode in ["all", "doc"]:
+                        add_log(task_id, "info", f"📥 开始下载 {len(documents)} 个文档...", url)
+                        
+                        # 逐个下载并记录
+                        for doc in documents:
+                            try:
+                                import aiohttp
+                                async with aiohttp.ClientSession() as session:
+                                    result = await doc_handler.download_document(
+                                        session, doc, notice_title=title
+                                    )
+                                    if result.get("downloaded"):
+                                        size = result.get("size", 0)
+                                        filename = result.get("local_filename", "")
+                                        add_log(task_id, "success", f"✅ 下载: {filename} ({format_file_size(size)})")
+                                        total_docs_downloaded += 1
+                                    elif result.get("error"):
+                                        add_log(task_id, "error", f"❌ 下载失败: {result.get('error')[:50]}")
+                            except Exception as e:
+                                add_log(task_id, "error", f"❌ 下载异常: {str(e)[:50]}")
                 
                 results.append({
                     "url": url,
                     "title": title,
-                    "success": True,
-                    "is_competition_related": is_competition,
-                    "documents": documents
+                    "page_date": page_date.isoformat() if page_date else None,
+                    "documents": documents,
+                    "success": True
                 })
                 success_count += 1
                 
@@ -251,12 +384,13 @@ async def run_crawl_task(task_id: str, urls: List[Dict], config: CrawlConfig):
                 add_log(task_id, "error", f"❌ 异常: {str(e)}", url)
                 fail_count += 1
             
-            # 短暂延迟，避免请求过快
+            # 短暂延迟
             await asyncio.sleep(0.5)
         
         # 更新进度
         task["progress"] = len(urls)
-        add_log(task_id, "info", f"📊 抓取完成: 成功 {success_count}, 失败 {fail_count}")
+        add_log(task_id, "info", f"📊 抓取完成: 成功 {success_count}, 失败 {fail_count}, 跳过 {skipped_by_date}")
+        add_log(task_id, "info", f"📄 文档统计: 发现 {total_docs_found}, 下载 {total_docs_downloaded}")
         
         if not results:
             task["status"] = "failed"
@@ -264,49 +398,46 @@ async def run_crawl_task(task_id: str, urls: List[Dict], config: CrawlConfig):
             add_log(task_id, "error", "❌ 所有网址均抓取失败")
             return
         
-        # 下载文档
-        if config.mode in ["all", "doc"]:
-            all_docs = []
-            for r in results:
-                all_docs.extend(r.get("documents", []))
-            
-            if all_docs:
-                add_log(task_id, "info", f"📥 开始下载 {len(all_docs)} 个文档...")
-                # 这里简化处理，实际应该异步下载
-                add_log(task_id, "success", f"✅ 文档下载完成")
-        
         # 生成报告
         if config.mode in ["all", "html"]:
             add_log(task_id, "info", "📝 正在生成 HTML 报告...")
-            report_output = str(OUTPUT_DIR / "reports")
-            os.makedirs(report_output, exist_ok=True)
+            os.makedirs(str(OUTPUT_DIR / "reports"), exist_ok=True)
             add_log(task_id, "success", "✅ HTML 报告生成完成")
         
         # 生成 Word 报告
         add_log(task_id, "info", "📄 正在生成 Word 文档...")
-        word_output = str(OUTPUT_DIR / "word_reports")
-        os.makedirs(word_output, exist_ok=True)
+        os.makedirs(str(OUTPUT_DIR / "word_reports"), exist_ok=True)
         add_log(task_id, "success", "✅ Word 文档生成完成")
         
         # 更新任务状态
         task["status"] = "completed"
         task["completed_at"] = datetime.now().isoformat()
-        task["message"] = f"爬取完成: 成功 {success_count}, 失败 {fail_count}"
+        task["message"] = f"完成: 成功 {success_count}, 失败 {fail_count}, 文档 {total_docs_downloaded}"
         task["result"] = {
             "total_pages": len(results),
             "success_count": success_count,
             "fail_count": fail_count,
-            "total_documents": sum(len(r.get("documents", [])) for r in results)
+            "skipped_by_date": skipped_by_date,
+            "total_documents_found": total_docs_found,
+            "total_documents_downloaded": total_docs_downloaded
         }
-        add_log(task_id, "success", f"🎉 任务完成! 成功 {success_count}, 失败 {fail_count}")
+        add_log(task_id, "success", f"🎉 任务完成! 成功 {success_count}, 失败 {fail_count}, 文档 {total_docs_downloaded}")
         
     except Exception as e:
         task["status"] = "failed"
         task["message"] = f"错误: {str(e)}"
         task["completed_at"] = datetime.now().isoformat()
         add_log(task_id, "error", f"❌ 任务异常: {str(e)}")
-        import traceback
-        add_log(task_id, "error", f"{traceback.format_exc()}")
+
+
+def format_file_size(bytes_size: int) -> str:
+    """格式化文件大小"""
+    if bytes_size < 1024:
+        return f"{bytes_size}B"
+    elif bytes_size < 1024 * 1024:
+        return f"{bytes_size / 1024:.1f}KB"
+    else:
+        return f"{bytes_size / (1024 * 1024):.1f}MB"
 
 
 # ============ API 路由 ============
@@ -339,7 +470,6 @@ async def add_url(url_item: URLItem):
     if URLS_FILE.exists():
         urls = load_urls_from_csv(URLS_FILE)
     
-    # 检查是否已存在
     for u in urls:
         if u.get("url") == url_item.url:
             raise HTTPException(status_code=400, detail="URL 已存在")
@@ -374,7 +504,7 @@ async def add_urls_batch(urls: List[URLItem]):
         "message": f"成功添加 {len(new_urls)} 个 URL",
         "added": len(new_urls),
         "skipped": len(skipped),
-        "skipped_urls": skipped[:10]  # 只返回前10个
+        "skipped_urls": skipped[:10]
     }
 
 
@@ -400,22 +530,19 @@ async def upload_urls_file(file: UploadFile = File(...)):
     """上传 CSV/Excel 文件导入 URL"""
     import pandas as pd
     
-    # 保存上传的文件
     temp_file = UPLOAD_DIR / f"upload_{get_timestamp()}_{file.filename}"
     with open(temp_file, "wb") as f:
         content = await file.read()
         f.write(content)
     
     try:
-        # 读取文件
         if file.filename.endswith('.csv'):
             df = pd.read_csv(temp_file)
         elif file.filename.endswith(('.xlsx', '.xls')):
             df = pd.read_excel(temp_file)
         else:
-            raise HTTPException(status_code=400, detail="不支持的文件格式，请上传 CSV 或 Excel 文件")
+            raise HTTPException(status_code=400, detail="不支持的文件格式")
         
-        # 转换为 URLItem 列表
         urls = []
         for _, row in df.iterrows():
             url = str(row.get('url', row.get('网址', row.get('URL', '')))).strip()
@@ -426,12 +553,8 @@ async def upload_urls_file(file: UploadFile = File(...)):
                     category=str(row.get('category', row.get('分类', '')))
                 ))
         
-        # 合并到现有列表
         result = await add_urls_batch(urls)
-        
-        # 清理临时文件
         temp_file.unlink(missing_ok=True)
-        
         return result
         
     except Exception as e:
@@ -449,7 +572,6 @@ async def start_crawl(config: CrawlConfig, background_tasks: BackgroundTasks):
     if not urls:
         raise HTTPException(status_code=400, detail="URL 列表为空")
     
-    # 创建任务
     task_id = get_timestamp()
     crawl_tasks[task_id] = {
         "task_id": task_id,
@@ -463,9 +585,7 @@ async def start_crawl(config: CrawlConfig, background_tasks: BackgroundTasks):
         "logs": []
     }
     
-    # 后台执行
     background_tasks.add_task(run_crawl_task, task_id, urls, config)
-    
     return {"task_id": task_id, "message": "爬虫任务已启动", "total_urls": len(urls)}
 
 
@@ -487,8 +607,6 @@ async def get_crawl_logs(task_id: str, limit: int = 100, offset: int = 0):
     
     logs = task.get("logs", [])
     total = len(logs)
-    
-    # 分页返回
     paginated_logs = logs[offset:offset + limit]
     
     return {
@@ -511,7 +629,6 @@ async def list_reports():
     """列出所有报告"""
     reports = []
     
-    # HTML 报告
     reports_dir = OUTPUT_DIR / "reports"
     if reports_dir.exists():
         for f in sorted(reports_dir.glob("*.html"), reverse=True):
@@ -524,7 +641,6 @@ async def list_reports():
                 "created": datetime.fromtimestamp(stat.st_mtime).isoformat()
             })
     
-    # Word 报告
     word_dir = OUTPUT_DIR / "word_reports"
     if word_dir.exists():
         for f in sorted(word_dir.glob("*.docx"), reverse=True):
@@ -537,7 +653,6 @@ async def list_reports():
                 "created": datetime.fromtimestamp(stat.st_mtime).isoformat()
             })
     
-    # JSON 数据
     data_dir = OUTPUT_DIR / "data"
     if data_dir.exists():
         for f in sorted(data_dir.glob("*.json"), reverse=True):
@@ -590,7 +705,8 @@ async def list_documents():
     docs_dir = OUTPUT_DIR / "documents"
     
     if docs_dir.exists():
-        for ext in ["*.pdf", "*.doc", "*.docx", "*.xls", "*.xlsx", "*.ppt", "*.pptx", "*.zip", "*.rar"]:
+        for ext in ["*.pdf", "*.doc", "*.docx", "*.xls", "*.xlsx", "*.ppt", "*.pptx", 
+                    "*.zip", "*.rar", "*.txt", "*.wps", "*.et", "*.dps"]:
             for f in docs_dir.glob(ext):
                 stat = f.stat()
                 docs.append({
@@ -609,7 +725,6 @@ async def get_stats():
     """获取统计数据"""
     urls = load_urls_from_csv(URLS_FILE) if URLS_FILE.exists() else []
     
-    # 任务统计
     task_stats = {
         "total": len(crawl_tasks),
         "running": sum(1 for t in crawl_tasks.values() if t["status"] == "running"),
@@ -617,7 +732,6 @@ async def get_stats():
         "failed": sum(1 for t in crawl_tasks.values() if t["status"] == "failed")
     }
     
-    # 文档统计
     docs = await list_documents()
     reports = await list_reports()
     
@@ -629,7 +743,6 @@ async def get_stats():
     }
 
 
-# 清理任务（可选：定期清理旧任务）
 @app.delete("/api/crawl/tasks/{task_id}")
 async def delete_task(task_id: str):
     """删除任务记录"""

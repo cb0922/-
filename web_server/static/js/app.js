@@ -121,6 +121,14 @@ function initEventListeners() {
     // 开始爬取
     document.getElementById('startCrawlBtn')?.addEventListener('click', startCrawl);
     
+    // 日期过滤开关
+    document.getElementById('filterByDate')?.addEventListener('change', (e) => {
+        const dateConfig = document.getElementById('dateFilterConfig');
+        if (dateConfig) {
+            dateConfig.style.display = e.target.checked ? 'block' : 'none';
+        }
+    });
+    
     // 刷新报告
     document.getElementById('refreshReportsBtn')?.addEventListener('click', loadReports);
     
@@ -281,7 +289,10 @@ async function startCrawl() {
         timeout: parseInt(document.getElementById('timeout').value),
         use_proxy: document.getElementById('useProxy').checked,
         max_retries: parseInt(document.getElementById('maxRetries').value),
-        auto_remove_failed: document.getElementById('autoRemove').checked
+        auto_remove_failed: document.getElementById('autoRemove').checked,
+        // 新增：日期过滤配置
+        filter_by_date: document.getElementById('filterByDate').checked,
+        start_date: document.getElementById('startDate').value
     };
     
     try {
