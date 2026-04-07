@@ -480,15 +480,19 @@
             }
         }
 
-        // 格式化日期
+        // 格式化日期（按北京时间显示）
         function formatDate(dateStr) {
+            // 解析日期字符串
             const date = new Date(dateStr);
-            return date.toLocaleString('zh-CN', {
+            // 转换为北京时间（UTC+8）
+            const beijingTime = new Date(date.getTime() + 8 * 60 * 60 * 1000);
+            return beijingTime.toLocaleString('zh-CN', {
                 year: 'numeric',
                 month: '2-digit',
                 day: '2-digit',
                 hour: '2-digit',
-                minute: '2-digit'
+                minute: '2-digit',
+                timeZone: 'UTC'
             });
         }
 

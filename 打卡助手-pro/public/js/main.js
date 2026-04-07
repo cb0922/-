@@ -5,7 +5,7 @@
 // 全局状态
 let currentUser = null;
 let habits = [];
-let currentDate = new Date();
+let currentDate = API.utils.getBeijingTime();
 
 // ============================================
 // 初始化
@@ -180,7 +180,10 @@ function getHabitTypeText(type) {
 }
 
 function isCheckedInToday(habitId) {
-    // 这里应该从打卡记录中检查
+    // 获取今天的北京日期
+    const today = API.utils.getBeijingDateStr();
+    // 从打卡记录中检查今天是否已打卡
+    // 注意：实际检查逻辑需要根据返回的打卡记录来实现
     return false;
 }
 
@@ -366,7 +369,7 @@ function changeWeek(direction) {
 }
 
 function goToToday() {
-    currentDate = new Date();
+    currentDate = API.utils.getBeijingTime();
     updateCalendar();
 }
 

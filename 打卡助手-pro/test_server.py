@@ -10,10 +10,34 @@ import json
 import os
 import re
 from datetime import datetime, timedelta
+import time
 from urllib.parse import urlparse, parse_qs
 
 PORT = 3000
 PUBLIC_DIR = os.path.join(os.path.dirname(__file__), 'public')
+
+# 北京时间偏移量（UTC+8）
+BEIJING_TZ_OFFSET = 8 * 3600  # 8小时 = 28800秒
+
+def get_beijing_time():
+    """获取当前北京时间"""
+    # 获取UTC时间戳
+    utc_timestamp = time.time()
+    # 转换为北京时间（UTC+8）
+    beijing_timestamp = utc_timestamp + BEIJING_TZ_OFFSET
+    return datetime.fromtimestamp(beijing_timestamp)
+
+def get_beijing_date_str():
+    """获取北京日期字符串 YYYY-MM-DD"""
+    return get_beijing_time().strftime('%Y-%m-%d')
+
+def get_beijing_time_str():
+    """获取北京时间字符串 HH:MM:SS"""
+    return get_beijing_time().strftime('%H:%M:%S')
+
+def get_beijing_iso_str():
+    """获取北京ISO时间字符串"""
+    return get_beijing_time().isoformat()
 
 # 模拟数据
 MOCK_USER = {
@@ -28,7 +52,7 @@ MOCK_USER = {
     "continuous_days": 7,
     "total_checkins": 45,
     "created_at": "2024-01-01T00:00:00",
-    "updated_at": datetime.now().isoformat()
+    "updated_at": get_beijing_iso_str()
 }
 
 MOCK_HABITS = [
@@ -94,7 +118,7 @@ class MockAPIHandler(http.server.SimpleHTTPRequestHandler):
     
     def log_message(self, format, *args):
         """自定义日志格式"""
-        print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {args[0]}")
+        print(f"[{get_beijing_time().strftime('%Y-%m-%d %H:%M:%S')}] {args[0]}")
     
     def send_json_response(self, data, status=200):
         """发送JSON响应"""
@@ -143,7 +167,7 @@ class MockAPIHandler(http.server.SimpleHTTPRequestHandler):
         
         # 健康检查
         if path == '/api/health':
-            self.send_json_response({"success": True, "data": {"status": "healthy", "time": datetime.now().isoformat()}})
+            self.send_json_response({"success": True, "data": {"status": "healthy", "time": get_beijing_iso_str()}})
             return
         
         # ========== 认证模块 ==========
@@ -233,7 +257,7 @@ class MockAPIHandler(http.server.SimpleHTTPRequestHandler):
             return
         
         if path == '/api/checkins/stats/overview':
-            today = datetime.now().strftime('%Y-%m-%d')
+            today = get_beijing_date_str()
             today_checkins = len([c for c in MOCK_CHECKINS if c['checkin_date'] == today])
             
             self.send_json_response({
@@ -258,8 +282,8 @@ class MockAPIHandler(http.server.SimpleHTTPRequestHandler):
             return
         
         if path == '/api/checkins/calendar':
-            year = query.get('year', [datetime.now().year])[0]
-            month = query.get('month', [datetime.now().month])[0]
+            year = query.get('year', [get_beijing_time().year])[0]
+            month = query.get('month', [get_beijing_time().month])[0]
             
             calendar_data = []
             for i in range(30):
@@ -509,7 +533,7 @@ class MockAPIHandler(http.server.SimpleHTTPRequestHandler):
                 "habit_type": data.get('habit_type', 'daily_once'),
                 "points": data.get('points', 1),
                 "status": "active",
-                "created_at": datetime.now().isoformat()
+                "created_at": get_beijing_iso_str()
             }
             MOCK_HABITS.append(new_habit)
             
@@ -532,7 +556,7 @@ class MockAPIHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_json_response({"success": False, "message": "习惯不存在"}, 404)
                 return
             
-            today = datetime.now().strftime('%Y-%m-%d')
+            today = get_beijing_date_str()
             # 检查是否已打卡
             existing = next((c for c in MOCK_CHECKINS if c['habit_id'] == habit_id and c['checkin_date'] == today), None)
             if existing:
@@ -545,11 +569,11 @@ class MockAPIHandler(http.server.SimpleHTTPRequestHandler):
                 "habit_id": habit_id,
                 "user_id": 1,
                 "checkin_date": today,
-                "checkin_time": datetime.now().strftime('%H:%M:%S'),
+                "checkin_time": get_beijing_time_str(),
                 "status": "completed",
                 "points_earned": points,
                 "note": data.get('note', ''),
-                "created_at": datetime.now().isoformat()
+                "created_at": get_beijing_iso_str()
             }
             MOCK_CHECKINS.insert(0, new_checkin)
             
@@ -586,7 +610,7 @@ class MockAPIHandler(http.server.SimpleHTTPRequestHandler):
                 "status": "completed",
                 "points_earned": habit['points'],
                 "note": data.get('note', ''),
-                "created_at": datetime.now().isoformat()
+                "created_at": get_beijing_iso_str()
             }
             MOCK_CHECKINS.insert(0, new_checkin)
             
@@ -613,7 +637,7 @@ class MockAPIHandler(http.server.SimpleHTTPRequestHandler):
             MOCK_USER['email'] = data.get('email', MOCK_USER['email'])
             MOCK_USER['phone'] = data.get('phone', MOCK_USER['phone'])
             MOCK_USER['avatar'] = data.get('avatar', MOCK_USER['avatar'])
-            MOCK_USER['updated_at'] = datetime.now().isoformat()
+            MOCK_USER['updated_at'] = get_beijing_iso_str()
             
             self.send_json_response({"success": True, "data": MOCK_USER, "message": "个人信息更新成功"})
             return
@@ -651,7 +675,7 @@ class MockAPIHandler(http.server.SimpleHTTPRequestHandler):
             habit['habit_type'] = data.get('habit_type', habit['habit_type'])
             habit['points'] = data.get('points', habit['points'])
             habit['status'] = data.get('status', habit['status'])
-            habit['updated_at'] = datetime.now().isoformat()
+            habit['updated_at'] = get_beijing_iso_str()
             
             self.send_json_response({"success": True, "data": habit, "message": "习惯更新成功"})
             return

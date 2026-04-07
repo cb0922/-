@@ -31,6 +31,72 @@ const setCurrentUser = (user) => {
 // 检查是否已登录
 const isLoggedIn = () => !!getToken();
 
+// ==================== 时间工具函数 ====================
+// 北京时间偏移量（UTC+8）
+const BEIJING_TZ_OFFSET = 8 * 60; // 8小时 = 480分钟
+
+/**
+ * 获取当前北京时间
+ * @returns {Date} 北京时间
+ */
+const getBeijingTime = () => {
+    const now = new Date();
+    const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+    return new Date(utc + (BEIJING_TZ_OFFSET * 60000));
+};
+
+/**
+ * 获取北京日期字符串 YYYY-MM-DD
+ * @returns {string}
+ */
+const getBeijingDateStr = () => {
+    const beijing = getBeijingTime();
+    const year = beijing.getFullYear();
+    const month = String(beijing.getMonth() + 1).padStart(2, '0');
+    const day = String(beijing.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
+/**
+ * 获取北京时间字符串 HH:MM:SS
+ * @returns {string}
+ */
+const getBeijingTimeStr = () => {
+    const beijing = getBeijingTime();
+    const hours = String(beijing.getHours()).padStart(2, '0');
+    const minutes = String(beijing.getMinutes()).padStart(2, '0');
+    const seconds = String(beijing.getSeconds()).padStart(2, '0');
+    return `${hours}:${minutes}:${seconds}`;
+};
+
+/**
+ * 获取北京ISO时间字符串
+ * @returns {string}
+ */
+const getBeijingISOString = () => {
+    const beijing = getBeijingTime();
+    return beijing.toISOString();
+};
+
+/**
+ * 判断两个日期是否是同一天（按北京时间）
+ * @param {string} date1 - 日期1 YYYY-MM-DD
+ * @param {string} date2 - 日期2 YYYY-MM-DD
+ * @returns {boolean}
+ */
+const isSameBeijingDay = (date1, date2) => {
+    return date1 === date2;
+};
+
+/**
+ * 检查日期是否是今天（按北京时间）
+ * @param {string} dateStr - 日期 YYYY-MM-DD
+ * @returns {boolean}
+ */
+const isTodayInBeijing = (dateStr) => {
+    return dateStr === getBeijingDateStr();
+};
+
 // 通用请求函数
 const request = async (url, options = {}) => {
     const token = getToken();
@@ -207,6 +273,13 @@ window.API = {
         setToken,
         getCurrentUser,
         setCurrentUser,
-        isLoggedIn
+        isLoggedIn,
+        // 时间工具
+        getBeijingTime,
+        getBeijingDateStr,
+        getBeijingTimeStr,
+        getBeijingISOString,
+        isSameBeijingDay,
+        isTodayInBeijing
     }
 };
