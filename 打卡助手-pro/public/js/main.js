@@ -408,20 +408,6 @@ function closeMakeupHabitDialog() {
     }
 }
 
-async function checkinHabit(habitId) {
-    try {
-        const response = await API.checkins.checkin(habitId);
-        showToast('打卡成功！+' + response.data.points_earned + '⭐');
-        
-        // 刷新数据
-        await loadStats();
-        await loadHabits();
-        
-    } catch (error) {
-        showToast(error.message || '打卡失败', 'error');
-    }
-}
-
 // ============================================
 // 统计数据
 // ============================================
@@ -1247,101 +1233,9 @@ async function renderHabitManageList() {
 }
 
 async function editHabit(habitId) {
-    const habit = habits.find(h => h.id === habitId);
-    if (!habit) return;
-    
-    // 创建编辑模态框
-    let editModal = document.getElementById('editHabitModal');
-    
-    if (!editModal) {
-        editModal = document.createElement('div');
-        editModal.id = 'editHabitModal';
-        editModal.className = 'modal-overlay';
-        document.body.appendChild(editModal);
-    }
-    
-    editModal.innerHTML = `
-        <div class="modal-container">
-            <div class="modal-header">
-                <div class="modal-title-section">
-                    <h3 class="modal-title">编辑习惯</h3>
-                    <p class="modal-subtitle">修改您的行为习惯设置</p>
-                </div>
-                <button class="modal-close" onclick="closeEditHabitModal()">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label class="form-label">习惯名称</label>
-                    <input type="text" class="form-input" id="editHabitName" value="${habit.name}">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">描述</label>
-                    <textarea class="form-textarea" id="editHabitDesc">${habit.description || ''}</textarea>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">积分设置</label>
-                    <input type="number" class="form-input" id="editHabitPoints" value="${habit.points}" min="-100" max="100">
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-create" onclick="saveHabitEdit(${habitId})">保存</button>
-                <button class="btn btn-cancel" onclick="closeEditHabitModal()">取消</button>
-            </div>
-        </div>
-    `;
-    
-    editModal.classList.add('active');
+    // 使用习惯管理模态框进行编辑
+    openHabitModal(habitId);
 }
-
-function closeEditHabitModal() {
-    const modal = document.getElementById('editHabitModal');
-    if (modal) {
-        modal.classList.remove('active');
-    }
-}
-
-async function saveHabitEdit(habitId) {
-    const name = document.getElementById('editHabitName').value.trim();
-    const description = document.getElementById('editHabitDesc').value.trim();
-    const points = parseInt(document.getElementById('editHabitPoints').value) || 0;
-    
-    if (!name) {
-        showToast('请输入习惯名称', 'error');
-        return;
-    }
-    
-    try {
-        await API.habits.update(habitId, {
-            name,
-            description,
-            points
-        });
-        
-        showToast('习惯更新成功');
-        closeEditHabitModal();
-        renderHabitManageList();
-        await loadHabits();
-        
-    } catch (error) {
-        showToast(error.message || '更新失败', 'error');
-    }
-}
-
-async function deleteHabit(habitId) {
-    if (!confirm('确定要删除这个习惯吗？此操作不可恢复。')) {
-        return;
-    }
-    
-    try {
-        await API.habits.delete(habitId);
-        showToast('习惯已删除');
-        renderHabitManageList();
-        await loadHabits();
     } catch (error) {
         showToast(error.message || '删除失败', 'error');
     }
@@ -2009,41 +1903,6 @@ function changeHabitWeek(direction) {
 function goToHabitToday() {
     currentDate = API.utils.getBeijingTime();
     updateHabitCalendar();
-}
-
-// ============================================
-// 个人资料编辑（补充缺失函数）
-// ============================================
-function closeProfileModal() {
-    const modal = document.getElementById('profileModal');
-    if (modal) {
-        modal.classList.remove('active');
-    }
-}
-
-async function saveProfile() {
-    const nickname = document.getElementById('profileNickname')?.value.trim();
-    
-    if (!nickname) {
-        showToast('请输入昵称', 'error');
-        return;
-    }
-    
-    try {
-        await API.auth.updateProfile({ nickname });
-        
-        if (currentUser) {
-            currentUser.nickname = nickname;
-        }
-        
-        document.getElementById('userName').textContent = nickname;
-        document.getElementById('userAvatar').textContent = nickname.charAt(0);
-        
-        showToast('个人资料已更新');
-        closeProfileModal();
-    } catch (error) {
-        showToast(error.message || '保存失败', 'error');
-    }
 }
 
 // ============================================
