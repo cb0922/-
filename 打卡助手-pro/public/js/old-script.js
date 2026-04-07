@@ -1,5 +1,7 @@
-// 当前选中的日期
-let currentDate = new Date(2026, 3, 2); // 2026年4月2日
+// 当前选中的日期（使用北京时间）
+let currentDate = (typeof API !== 'undefined' && API.utils && API.utils.getBeijingTime) 
+    ? API.utils.getBeijingTime() 
+    : new Date();
 
 // Tab 切换功能
 function switchTab(tabName) {
@@ -78,7 +80,9 @@ function changeWeek(direction) {
 
 // 回到今天
 function goToToday() {
-    currentDate = new Date();
+    currentDate = (typeof API !== 'undefined' && API.utils && API.utils.getBeijingTime) 
+        ? API.utils.getBeijingTime() 
+        : new Date();
     updateCalendar();
 }
 
@@ -168,8 +172,10 @@ function updateStats() {
 // 每分钟更新一次数据
 setInterval(updateStats, 60000);
 
-// 习惯列表页面当前日期
-let habitCurrentDate = new Date(2026, 3, 2);
+// 习惯列表页面当前日期（使用北京时间）
+let habitCurrentDate = (typeof API !== 'undefined' && API.utils && API.utils.getBeijingTime) 
+    ? API.utils.getBeijingTime() 
+    : new Date();
 
 // 初始化习惯列表日历
 function initHabitCalendar() {
@@ -231,7 +237,9 @@ function changeHabitWeek(direction) {
 
 // 习惯列表回到今天
 function goToHabitToday() {
-    habitCurrentDate = new Date();
+    habitCurrentDate = (typeof API !== 'undefined' && API.utils && API.utils.getBeijingTime) 
+        ? API.utils.getBeijingTime() 
+        : new Date();
     updateHabitCalendar();
 }
 

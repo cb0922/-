@@ -360,7 +360,63 @@ function switchTab(tabName) {
 
 // 日历相关
 function updateCalendar() {
-    // 原有日历更新逻辑
+    // 使用北京时间更新日历
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const date = currentDate.getDate();
+    const day = currentDate.getDay();
+    
+    // 计算当前周的起始日期（周一）
+    const weekStart = new Date(currentDate);
+    const dayOfWeek = day === 0 ? 6 : day - 1; // 转换为周一开始(0=周一, 6=周日)
+    weekStart.setDate(date - dayOfWeek);
+    
+    // 计算周数
+    const weekNum = getWeekNumber(currentDate);
+    const weekTitle = document.getElementById('weekTitle');
+    if (weekTitle) {
+        weekTitle.textContent = `${year}年${month + 1}月第${weekNum}周`;
+    }
+    
+    // 更新日期格子
+    const dayCells = document.querySelectorAll('.day-cell');
+    const weekDays = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+    
+    dayCells.forEach((cell, index) => {
+        const cellDate = new Date(weekStart);
+        cellDate.setDate(weekStart.getDate() + index);
+        
+        const cellMonth = cellDate.getMonth() + 1;
+        const cellDay = cellDate.getDate();
+        
+        const dayNameEl = cell.querySelector('.day-name');
+        const dayDateEl = cell.querySelector('.day-date');
+        
+        if (dayNameEl) dayNameEl.textContent = weekDays[index];
+        if (dayDateEl) dayDateEl.textContent = `${cellMonth}/${cellDay}`;
+        cell.setAttribute('data-date', cellDate.toISOString().split('T')[0]);
+        
+        // 检查是否是当前选中日期
+        cell.classList.remove('active');
+        if (cellDate.toDateString() === currentDate.toDateString()) {
+            cell.classList.add('active');
+        }
+        
+        // 点击事件
+        cell.onclick = () => {
+            currentDate = new Date(cellDate);
+            updateCalendar();
+        };
+    });
+}
+
+// 计算周数
+function getWeekNumber(date) {
+    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const dayNum = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
 }
 
 function changeWeek(direction) {
