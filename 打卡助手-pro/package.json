@@ -1,0 +1,41 @@
+{
+  "name": "打卡助手-pro",
+  "version": "1.0.0",
+  "description": "本地化Web测试版本 - 具有完整用户数据库和数据分析面板的学习打卡助手",
+  "main": "server/app.js",
+  "scripts": {
+    "start": "node server/app.js",
+    "dev": "nodemon server/app.js",
+    "init-db": "node server/init-db.js",
+    "seed": "node server/seed-data.js"
+  },
+  "keywords": [
+    "打卡",
+    "学习助手",
+    "习惯养成",
+    "数据分析"
+  ],
+  "author": "cb0922",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "sqlite3": "^5.1.6",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "cors": "^2.8.5",
+    "helmet": "^7.1.0",
+    "morgan": "^1.10.0",
+    "winston": "^3.11.0",
+    "winston-daily-rotate-file": "^4.7.1",
+    "express-rate-limit": "^7.1.5",
+    "dotenv": "^16.3.1",
+    "uuid": "^9.0.1",
+    "moment": "^2.29.4"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
