@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>日志查询 - 小打卡 Pro</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+        }
+        
+        /* 头部 */
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px 40px;
+            color: white;
+        }
+        
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .back-btn {
+            width: 40px;
+            height: 40px;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .back-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        
+        .header-title {
+            font-size: 24px;
+            font-weight: 600;
+        }
+        
+        /* 内容区 */
+        .content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+        
+        /* 筛选区 */
+        .filter-bar {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .filter-label {
+            font-size: 14px;
+            color: #6b7280;
+        }
+        
+        .filter-select, .filter-input {
+            padding: 8px 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+        }
+        
+        .filter-select:focus, .filter-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5a67d8;
+        }
+        
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #374151;
+        }
+        
+        .btn-secondary:hover {
+            background: #e5e7eb;
+        }
+        
+        /* 标签页 */
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .tab {
+            padding: 12px 24px;
+            background: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #6b7280;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .tab.active {
+            background: #667eea;
+            color: white;
+        }
+        
+        /* 日志列表 */
+        .log-list {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+        
+        .log-header {
+            display: grid;
+            grid-template-columns: 180px 100px 120px 1fr 160px;
+            gap: 16px;
+            padding: 16px 20px;
+            background: #f9fafb;
+            font-size: 13px;
+            font-weight: 600;
+            color: #374151;
+        }
+        
+        .log-item {
+            display: grid;
+            grid-template-columns: 180px 100px 120px 1fr 160px;
+            gap: 16px;
+            padding: 16px 20px;
+            border-bottom: 1px solid #f3f4f6;
+            font-size: 14px;
+            color: #4b5563;
+        }
+        
+        .log-item:last-child {
+            border-bottom: none;
+        }
+        
+        .log-time {
+            color: #6b7280;
+            font-size: 13px;
+        }
+        
+        .log-type {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .log-type.create {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .log-type.update {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        
+        .log-type.delete {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .log-type.login {
+            background: #ede9fe;
+            color: #5b21b6;
+        }
+        
+        .log-type.checkin {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .log-user {
+            color: #1f2937;
+            font-weight: 500;
+        }
+        
+        .log-content {
+            color: #4b5563;
+        }
+        
+        /* 分页 */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            padding: 20px;
+        }
+        
+        .page-btn {
+            padding: 8px 12px;
+            border: 1px solid #e5e7eb;
+            background: white;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #4b5563;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .page-btn:hover:not(:disabled) {
+            border-color: #667eea;
+            color: #667eea;
+        }
+        
+        .page-btn.active {
+            background: #667eea;
+            border-color: #667eea;
+            color: white;
+        }
+        
+        .page-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        /* 空状态 */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6b7280;
+        }
+        
+        .empty-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+        
+        /* 加载 */
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #e5e7eb;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* 响应式 */
+        @media (max-width: 1024px) {
+            .log-header, .log-item {
+                grid-template-columns: 140px 80px 1fr 120px;
+            }
+            .log-header > :nth-child(3),
+            .log-item > :nth-child(3) {
+                display: none;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .log-header, .log-item {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+            .log-header {
+                display: none;
+            }
+            .log-item {
+                padding: 16px;
+            }
+            .filter-bar {
+                flex-direction: column;
+            }
+            .filter-group {
+                width: 100%;
+            }
+            .filter-select, .filter-input {
+                flex: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <div class="header-left">
+                <button class="back-btn" onclick="window.location.href='/'">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                </button>
+                <h1 class="header-title">日志查询</h1>
+            </div>
+        </div>
+    </header>
+
+    <main class="content">
+        <!-- 标签页 -->
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('system')">系统日志</button>
+            <button class="tab" onclick="switchTab('login')">登录日志</button>
+        </div>
+
+        <!-- 筛选区 -->
+        <div class="filter-bar">
+            <div class="filter-group">
+                <span class="filter-label">操作类型:</span>
+                <select class="filter-select" id="actionFilter">
+                    <option value="">全部</option>
+                    <option value="create_habit">创建习惯</option>
+                    <option value="update_habit">更新习惯</option>
+                    <option value="delete_habit">删除习惯</option>
+                    <option value="checkin">打卡</option>
+                    <option value="login">登录</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <span class="filter-label">开始日期:</span>
+                <input type="date" class="filter-input" id="startDate">
+            </div>
+            <div class="filter-group">
+                <span class="filter-label">结束日期:</span>
+                <input type="date" class="filter-input" id="endDate">
+            </div>
+            <div class="filter-group" style="margin-left: auto;">
+                <button class="btn btn-primary" onclick="loadLogs()">查询</button>
+                <button class="btn btn-secondary" onclick="resetFilter()">重置</button>
+            </div>
+        </div>
+
+        <!-- 日志列表 -->
+        <div class="log-list" id="logList">
+            <div class="log-header">
+                <span>时间</span>
+                <span>类型</span>
+                <span>用户</span>
+                <span>内容</span>
+                <span>IP地址</span>
+            </div>
+            <div id="logContent">
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 分页 -->
+        <div class="pagination" id="pagination">
+            <!-- 动态生成分页 -->
+        </div>
+    </main>
+
+    <script src="/js/api.js"></script>
+    <script>
+        // 检查登录
+        if (!API.utils.isLoggedIn()) {
+            window.location.href = '/login';
+        }
+
+        let currentTab = 'system';
+        let currentPage = 1;
+        let totalPages = 1;
+
+        // 切换标签
+        function switchTab(tab) {
+            currentTab = tab;
+            currentPage = 1;
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            loadLogs();
+        }
+
+        // 加载日志
+        async function loadLogs() {
+            const content = document.getElementById('logContent');
+            content.innerHTML = '<div class="loading"><div class="loading-spinner"></div></div>';
+
+            try {
+                const params = {
+                    page: currentPage,
+                    pageSize: 20
+                };
+
+                const action = document.getElementById('actionFilter').value;
+                const startDate = document.getElementById('startDate').value;
+                const endDate = document.getElementById('endDate').value;
+
+                if (action) params.action = action;
+                if (startDate) params.start_date = startDate;
+                if (endDate) params.end_date = endDate;
+
+                let response;
+                if (currentTab === 'system') {
+                    response = await API.logs.getSystemLogs(params);
+                } else {
+                    response = await API.logs.getLoginLogs(params);
+                }
+
+                const data = response.data;
+                totalPages = data.pagination.totalPages;
+
+                if (data.list.length === 0) {
+                    content.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-icon">📋</div>
+                            <p>暂无日志记录</p>
+                        </div>
+                    `;
+                } else {
+                    content.innerHTML = data.list.map(log => `
+                        <div class="log-item">
+                            <span class="log-time">${formatDate(log.created_at)}</span>
+                            <span class="log-type ${getLogType(log.action)}">${formatAction(log.action)}</span>
+                            <span class="log-user">${log.username || '系统'}</span>
+                            <span class="log-content">${formatContent(log)}</span>
+                            <span class="log-time">${log.ip_address || '-'}</span>
+                        </div>
+                    `).join('');
+                }
+
+                renderPagination();
+
+            } catch (error) {
+                console.error('加载日志失败:', error);
+                content.innerHTML = '<div class="empty-state"><p>加载失败，请重试</p></div>';
+            }
+        }
+
+        // 格式化日期
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        // 获取日志类型样式
+        function getLogType(action) {
+            if (action.includes('create')) return 'create';
+            if (action.includes('update')) return 'update';
+            if (action.includes('delete')) return 'delete';
+            if (action.includes('login')) return 'login';
+            if (action.includes('checkin')) return 'checkin';
+            return '';
+        }
+
+        // 格式化操作名称
+        function formatAction(action) {
+            const actions = {
+                'create_habit': '创建习惯',
+                'update_habit': '更新习惯',
+                'delete_habit': '删除习惯',
+                'checkin': '打卡',
+                'login': '登录',
+                'logout': '登出',
+                'register': '注册'
+            };
+            return actions[action] || action;
+        }
+
+        // 格式化内容
+        function formatContent(log) {
+            if (currentTab === 'login') {
+                return log.status === 'success' ? '登录成功' : `登录失败: ${log.fail_reason || ''}`;
+            }
+            return log.new_value || '-';
+        }
+
+        // 渲染分页
+        function renderPagination() {
+            const pagination = document.getElementById('pagination');
+            if (totalPages <= 1) {
+                pagination.innerHTML = '';
+                return;
+            }
+
+            let html = `
+                <button class="page-btn" onclick="goToPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>上一页</button>
+            `;
+
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
+                    html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
+                } else if (i === currentPage - 2 || i === currentPage + 2) {
+                    html += `<span>...</span>`;
+                }
+            }
+
+            html += `
+                <button class="page-btn" onclick="goToPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>下一页</button>
+            `;
+
+            pagination.innerHTML = html;
+        }
+
+        // 跳转页面
+        function goToPage(page) {
+            if (page < 1 || page > totalPages) return;
+            currentPage = page;
+            loadLogs();
+        }
+
+        // 重置筛选
+        function resetFilter() {
+            document.getElementById('actionFilter').value = '';
+            document.getElementById('startDate').value = '';
+            document.getElementById('endDate').value = '';
+            currentPage = 1;
+            loadLogs();
+        }
+
+        // 页面加载时加载日志
+        document.addEventListener('DOMContentLoaded', loadLogs);
+    </script>
+</body>
+</html>

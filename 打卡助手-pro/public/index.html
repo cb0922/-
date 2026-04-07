@@ -1,0 +1,1890 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小打卡 Pro - 学习打卡助手</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <style>
+        /* 登录状态相关样式 */
+        .login-required {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: linear-gradient(180deg, #4A7BF7 0%, #6B8EF7 200px, #F0F2F5 200px);
+            text-align: center;
+            padding: 20px;
+        }
+        .login-required h2 {
+            color: white;
+            margin-bottom: 20px;
+        }
+        .login-required .btn-login {
+            padding: 12px 32px;
+            background: white;
+            color: #4A7BF7;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .login-required .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        .user-menu {
+            position: relative;
+            cursor: pointer;
+        }
+        .user-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 8px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            min-width: 160px;
+            display: none;
+            z-index: 100;
+        }
+        .user-dropdown.show {
+            display: block;
+        }
+        .user-dropdown-item {
+            padding: 12px 16px;
+            color: #374151;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .user-dropdown-item:hover {
+            background: #f3f4f6;
+        }
+        .user-dropdown-item:first-child {
+            border-radius: 8px 8px 0 0;
+        }
+        .user-dropdown-item:last-child {
+            border-radius: 0 0 8px 8px;
+        }
+        .user-dropdown-divider {
+            height: 1px;
+            background: #e5e7eb;
+            margin: 4px 0;
+        }
+        /* 加载状态 */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255,255,255,0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #e5e7eb;
+            border-top-color: #4A7BF7;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- 主容器 -->
+    <div class="app-container">
+        <!-- 顶部蓝色Header区域 -->
+        <header class="header">
+            <div class="header-content">
+                <div class="header-left">
+                    <h1 class="app-title">
+                        小打卡 - 学习打卡助手
+                        <span class="download-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                        </span>
+                    </h1>
+                    <p class="user-stats">你已连续打卡 <span class="highlight">0</span> 天，已累计完成 <span class="highlight">0</span> 个学习计划</p>
+                </div>
+                <div class="header-right user-menu" id="userMenu">
+                    <div class="user-avatar">
+                        <span class="avatar-text" id="userAvatar">用</span>
+                    </div>
+                    <span class="user-name" id="userName">加载中...</span>
+                    <span class="dropdown-arrow">▼</span>
+                    <div class="user-dropdown" id="userDropdown">
+                        <div class="user-dropdown-item" onclick="goToDashboard()">📊 数据分析</div>
+                        <div class="user-dropdown-item" onclick="goToLogs()">📋 日志查询</div>
+                        <div class="user-dropdown-item" onclick="editProfile()">👤 个人资料</div>
+                        <div class="user-dropdown-divider"></div>
+                        <div class="user-dropdown-item" onclick="logout()" style="color: #ef4444;">退出登录</div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- 统计数据卡片区域 -->
+        <section class="stats-section">
+            <div class="stats-grid">
+                <!-- 学习时间卡片 -->
+                <div class="stat-card">
+                    <span class="stat-label">今日学习时间</span>
+                    <span class="stat-value blue">0m</span>
+                </div>
+                <!-- 运动时间卡片 -->
+                <div class="stat-card">
+                    <span class="stat-label">运动户外时间</span>
+                    <span class="stat-value blue">0m</span>
+                </div>
+                <!-- 任务数量卡片 -->
+                <div class="stat-card">
+                    <span class="stat-label">今日任务数量</span>
+                    <span class="stat-value blue">0/0</span>
+                </div>
+                <!-- 完成率卡片 -->
+                <div class="stat-card">
+                    <span class="stat-label">今日完成率</span>
+                    <span class="stat-value blue">0%</span>
+                </div>
+                <!-- 积分成就卡片 -->
+                <div class="stat-card clickable" onclick="showPointsPage()">
+                    <span class="stat-label">积分成就</span>
+                    <span class="stat-icon trophy">🏆</span>
+                </div>
+                <!-- 行为习惯卡片 -->
+                <div class="stat-card clickable active">
+                    <span class="stat-label">行为习惯</span>
+                    <span class="stat-icon star">⭐</span>
+                </div>
+                <!-- 电子宠物卡片 -->
+                <div class="stat-card clickable">
+                    <span class="stat-label">电子宠物</span>
+                    <span class="stat-icon paw">🐾</span>
+                </div>
+                <!-- 使用帮助卡片 -->
+                <div class="stat-card clickable">
+                    <span class="stat-label">使用帮助</span>
+                    <span class="stat-icon help">❓</span>
+                </div>
+                <!-- 其他卡片 -->
+                <div class="stat-card clickable">
+                    <span class="stat-label">其他</span>
+                    <span class="stat-more">•••</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- 左侧浮动菜单按钮 -->
+        <div class="floating-menu">
+            <div class="menu-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="14" width="7" height="7"></rect>
+                    <rect x="3" y="14" width="7" height="7"></rect>
+                </svg>
+            </div>
+        </div>
+
+        <!-- 通知横幅 -->
+        <div class="notification-banner" id="notificationBanner">
+            <div class="banner-icon">🔔</div>
+            <div class="banner-content">
+                <span class="banner-text">电子宠物设置密码设计变更</span>
+                <a href="#" class="banner-link">查看详情</a>
+            </div>
+            <button class="banner-close" onclick="closeBanner()">关闭</button>
+        </div>
+
+        <!-- Tab切换区域 -->
+        <section class="content-section">
+            <div class="tab-container">
+                <div class="tab-header">
+                    <button class="tab-btn" data-tab="study" onclick="switchTab('study')">学习计划</button>
+                    <button class="tab-btn active" data-tab="habit" onclick="switchTab('habit')">行为习惯</button>
+                </div>
+                
+                <!-- 学习计划内容 -->
+                <div class="tab-content" id="studyTab">
+                    <!-- 学习计划头部操作区 -->
+                    <div class="study-header">
+                        <div class="action-buttons">
+                            <button class="btn btn-ai">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                                    <path d="M2 17l10 5 10-5"></path>
+                                    <path d="M2 12l10 5 10-5"></path>
+                                </svg>
+                                AI创建
+                            </button>
+                            <button class="btn btn-batch">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="8" y1="6" x2="21" y2="6"></line>
+                                    <line x1="8" y1="12" x2="21" y2="12"></line>
+                                    <line x1="8" y1="18" x2="21" y2="18"></line>
+                                    <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                                    <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                                    <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                                </svg>
+                                批量添加
+                            </button>
+                            <button class="btn btn-primary">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                </svg>
+                                添加计划
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- 日历周视图 -->
+                    <div class="calendar-section">
+                        <div class="calendar-header">
+                            <div class="calendar-title">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                                </svg>
+                                <span id="weekTitle">2026年4月第14周</span>
+                            </div>
+                            <div class="calendar-nav">
+                                <button class="nav-btn btn-preview">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                        <circle cx="12" cy="12" r="3"></circle>
+                                    </svg>
+                                    总预览
+                                </button>
+                                <button class="nav-btn nav-arrow" onclick="changeWeek(-1)">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="15 18 9 12 15 6"></polyline>
+                                    </svg>
+                                </button>
+                                <button class="nav-btn btn-today" onclick="goToToday()">今天</button>
+                                <button class="nav-btn nav-arrow" onclick="changeWeek(1)">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="9 18 15 12 9 6"></polyline>
+                                    </svg>
+                                </button>
+                                <button class="nav-btn btn-calendar">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="week-calendar">
+                            <div class="day-cell" data-date="2026-03-30">
+                                <span class="day-name">周一</span>
+                                <span class="day-date">3/30</span>
+                            </div>
+                            <div class="day-cell" data-date="2026-03-31">
+                                <span class="day-name">周二</span>
+                                <span class="day-date">3/31</span>
+                            </div>
+                            <div class="day-cell" data-date="2026-04-01">
+                                <span class="day-name">周三</span>
+                                <span class="day-date">4/1</span>
+                            </div>
+                            <div class="day-cell active" data-date="2026-04-02">
+                                <span class="day-name">周四</span>
+                                <span class="day-date">4/2</span>
+                            </div>
+                            <div class="day-cell" data-date="2026-04-03">
+                                <span class="day-name">周五</span>
+                                <span class="day-date">4/3</span>
+                            </div>
+                            <div class="day-cell" data-date="2026-04-04">
+                                <span class="day-name">周六</span>
+                                <span class="day-date">4/4</span>
+                            </div>
+                            <div class="day-cell" data-date="2026-04-05">
+                                <span class="day-name">周日</span>
+                                <span class="day-date">4/5</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 我的计划区域 -->
+                    <div class="plan-section">
+                        <div class="plan-header">
+                            <div class="plan-title-wrapper">
+                                <div class="title-indicator"></div>
+                                <h3 class="plan-title">我的计划</h3>
+                            </div>
+                            <button class="btn-share">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="18" cy="5" r="3"></circle>
+                                    <circle cx="6" cy="12" r="3"></circle>
+                                    <circle cx="18" cy="19" r="3"></circle>
+                                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                                    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                                </svg>
+                                分享
+                            </button>
+                        </div>
+                        
+                        <!-- 空状态 -->
+                        <div class="plan-empty-state">
+                            <div class="book-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="#C5C9D0" stroke-width="1.5">
+                                    <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                                    <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 行为习惯内容 -->
+                <div class="tab-content active" id="habitTab">
+                    <!-- 习惯列表头部 -->
+                    <div class="habit-list-header">
+                        <div class="habit-list-title-wrapper">
+                            <div class="title-indicator"></div>
+                            <h2 class="habit-list-title">我的行为习惯</h2>
+                        </div>
+                        <div class="habit-list-actions">
+                            <button class="btn btn-stats">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M18 20V10"></path>
+                                    <path d="M12 20V4"></path>
+                                    <path d="M6 20v-6"></path>
+                                </svg>
+                                数据统计
+                            </button>
+                            <button class="btn btn-manage" onclick="showHabitManageView()">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 20h9"></path>
+                                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                                </svg>
+                                习惯管理
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- 习惯日历区域 -->
+                    <div class="habit-calendar-section">
+                        <div class="calendar-header">
+                            <div class="calendar-title">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                                </svg>
+                                <span id="habitWeekTitle">2026年4月第1周</span>
+                            </div>
+                            <div class="calendar-nav">
+                                <button class="nav-btn btn-makeup">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <path d="M12 16v-4"></path>
+                                        <path d="M12 8h.01"></path>
+                                    </svg>
+                                    可补打卡
+                                </button>
+                                <button class="nav-btn btn-today" onclick="goToHabitToday()">今天</button>
+                                <button class="nav-btn nav-arrow" onclick="changeHabitWeek(-1)">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="15 18 9 12 15 6"></polyline>
+                                    </svg>
+                                </button>
+                                <button class="nav-btn nav-arrow" onclick="changeHabitWeek(1)">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="9 18 15 12 9 6"></polyline>
+                                    </svg>
+                                </button>
+                                <button class="nav-btn btn-calendar">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="week-calendar habit-week-calendar">
+                            <div class="day-cell" data-date="2026-03-30">
+                                <span class="day-name">周一</span>
+                                <span class="day-date">3/30</span>
+                                <span class="day-status"></span>
+                            </div>
+                            <div class="day-cell" data-date="2026-03-31">
+                                <span class="day-name">周二</span>
+                                <span class="day-date">3/31</span>
+                                <span class="day-status"></span>
+                            </div>
+                            <div class="day-cell" data-date="2026-04-01">
+                                <span class="day-name">周三</span>
+                                <span class="day-date">4/1</span>
+                                <span class="day-status"></span>
+                            </div>
+                            <div class="day-cell active" data-date="2026-04-02">
+                                <span class="day-name">周四</span>
+                                <span class="day-date">4/2</span>
+                                <span class="day-status completed"></span>
+                            </div>
+                            <div class="day-cell" data-date="2026-04-03">
+                                <span class="day-name">周五</span>
+                                <span class="day-date">4/3</span>
+                                <span class="day-status"></span>
+                            </div>
+                            <div class="day-cell" data-date="2026-04-04">
+                                <span class="day-name">周六</span>
+                                <span class="day-date">4/4</span>
+                                <span class="day-status"></span>
+                            </div>
+                            <div class="day-cell" data-date="2026-04-05">
+                                <span class="day-name">周日</span>
+                                <span class="day-date">4/5</span>
+                                <span class="day-status"></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 搜索和筛选区域 -->
+                    <div class="habit-filter-section">
+                        <div class="search-box">
+                            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                            </svg>
+                            <input type="text" class="search-input" placeholder="搜索习惯名称或描述...">
+                        </div>
+                        <div class="view-toggle">
+                            <button class="view-btn refresh-btn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="23 4 23 10 17 10"></polyline>
+                                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                                </svg>
+                            </button>
+                            <button class="view-btn active">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="3" width="7" height="7"></rect>
+                                    <rect x="14" y="3" width="7" height="7"></rect>
+                                    <rect x="14" y="14" width="7" height="7"></rect>
+                                    <rect x="3" y="14" width="7" height="7"></rect>
+                                </svg>
+                            </button>
+                            <button class="view-btn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="8" y1="6" x2="21" y2="6"></line>
+                                    <line x1="8" y1="12" x2="21" y2="12"></line>
+                                    <line x1="8" y1="18" x2="21" y2="18"></line>
+                                    <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                                    <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                                    <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- 筛选标签 -->
+                    <div class="filter-tags">
+                        <button class="filter-tag active">全部</button>
+                        <button class="filter-tag">加分</button>
+                        <button class="filter-tag">扣分</button>
+                        <button class="filter-tag">已完成</button>
+                        <button class="filter-tag">待完成</button>
+                        <button class="filter-tag">每日多次</button>
+                        <button class="filter-tag">每周多次</button>
+                    </div>
+                    
+                    <!-- 习惯卡片列表 -->
+                    <div class="habit-cards">
+                        <!-- 习惯卡片1 -->
+                        <div class="habit-card">
+                            <div class="habit-card-header">
+                                <div class="habit-icon" style="background: #22C55E;">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                                        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                                    </svg>
+                                </div>
+                                <div class="habit-info">
+                                    <h4 class="habit-name">认真完成各科作业</h4>
+                                    <p class="habit-desc">按时认真完成各科作业</p>
+                                </div>
+                            </div>
+                            <div class="habit-card-footer">
+                                <div class="habit-meta">
+                                    <span class="habit-type">每日一次</span>
+                                    <span class="habit-points">+2⭐</span>
+                                </div>
+                                <button class="btn-checkin">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    </svg>
+                                    打卡
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- 习惯卡片2 -->
+                        <div class="habit-card">
+                            <div class="habit-card-header">
+                                <div class="habit-icon" style="background: #4A7BF7;">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                                        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                                    </svg>
+                                </div>
+                                <div class="habit-info">
+                                    <h4 class="habit-name">复习今日所学内容</h4>
+                                    <p class="habit-desc">当天复习学习的内容</p>
+                                </div>
+                            </div>
+                            <div class="habit-card-footer">
+                                <div class="habit-meta">
+                                    <span class="habit-type">每日一次</span>
+                                    <span class="habit-points">+2⭐</span>
+                                </div>
+                                <button class="btn-checkin">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    </svg>
+                                    打卡
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- 新建习惯模态框 -->
+    <div class="modal-overlay" id="habitModal">
+        <div class="modal-container">
+            <div class="modal-header">
+                <div class="modal-title-section">
+                    <h3 class="modal-title">新建习惯</h3>
+                    <p class="modal-subtitle">创建和配置您的行为习惯，设置打卡规则和积分奖励</p>
+                </div>
+                <button class="modal-close" onclick="closeHabitModal()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="modal-body">
+                <!-- 习惯名称 -->
+                <div class="form-group">
+                    <label class="form-label">习惯名称</label>
+                    <input type="text" class="form-input" placeholder="例如：早起、运动">
+                </div>
+                
+                <!-- 描述 -->
+                <div class="form-group">
+                    <label class="form-label">描述</label>
+                    <textarea class="form-textarea" placeholder="描述这个习惯的具体内容"></textarea>
+                </div>
+                
+                <!-- 习惯类型 -->
+                <div class="form-group">
+                    <label class="form-label">习惯类型</label>
+                    <div class="form-select-wrapper">
+                        <select class="form-select">
+                            <option>每日一次</option>
+                            <option>每日多次</option>
+                            <option>每周一次</option>
+                            <option>每周多次</option>
+                        </select>
+                        <svg class="select-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </div>
+                    <p class="form-hint">每天只能打卡一次</p>
+                </div>
+                
+                <!-- 积分设置 -->
+                <div class="form-group">
+                    <label class="form-label">积分设置</label>
+                    <input type="number" class="form-input" value="1" min="-100" max="100">
+                    <p class="form-hint">正数：奖励积分 | 负数：扣除积分（范围：-100 到 100）</p>
+                </div>
+                
+                <!-- 家长审定 -->
+                <div class="form-group checkbox-group">
+                    <label class="checkbox-wrapper">
+                        <input type="checkbox" class="checkbox-input">
+                        <span class="checkbox-text">需要家长审定后才发积分</span>
+                    </label>
+                    <p class="form-hint checkbox-hint">开启后，打卡只会记录为「待审定」，家长审核通过/调整后才会发放星星。</p>
+                </div>
+                
+                <!-- 图标和颜色选择 -->
+                <div class="form-row">
+                    <div class="form-group icon-group">
+                        <label class="form-label">图标</label>
+                        <div class="icon-selector">
+                            <div class="icon-grid">
+                                <div class="icon-item active" data-icon="star">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                                    </svg>
+                                </div>
+                                <div class="icon-item" data-icon="check">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                </div>
+                                <div class="icon-item" data-icon="target">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <circle cx="12" cy="12" r="6"></circle>
+                                        <circle cx="12" cy="12" r="2"></circle>
+                                    </svg>
+                                </div>
+                                <div class="icon-item" data-icon="award">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="8" r="7"></circle>
+                                        <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline>
+                                    </svg>
+                                </div>
+                                <div class="icon-item" data-icon="trophy">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
+                                        <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path>
+                                        <path d="M4 22h16"></path>
+                                        <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path>
+                                        <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path>
+                                        <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path>
+                                    </svg>
+                                </div>
+                                <div class="icon-item" data-icon="heart">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                                    </svg>
+                                </div>
+                                <div class="icon-item" data-icon="book">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                                        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                                    </svg>
+                                </div>
+                                <div class="icon-item" data-icon="bookmark">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                                    </svg>
+                                </div>
+                                <div class="icon-item" data-icon="edit">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                    </svg>
+                                </div>
+                                <div class="icon-item" data-icon="file">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                        <polyline points="14 2 14 8 20 8"></polyline>
+                                    </svg>
+                                </div>
+                                <div class="icon-item" data-icon="calendar">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                                    </svg>
+                                </div>
+                                <div class="icon-item" data-icon="clock">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <polyline points="12 6 12 12 16 14"></polyline>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group color-group">
+                        <label class="form-label">颜色</label>
+                        <div class="color-selector">
+                            <div class="color-grid">
+                                <div class="color-item active" style="background: #4A7BF7;" data-color="#4A7BF7"></div>
+                                <div class="color-item" style="background: #8B5CF6;" data-color="#8B5CF6"></div>
+                                <div class="color-item" style="background: #14B8A6;" data-color="#14B8A6"></div>
+                                <div class="color-item" style="background: #10B981;" data-color="#10B981"></div>
+                                <div class="color-item" style="background: #22C55E;" data-color="#22C55E"></div>
+                                <div class="color-item" style="background: #84CC16;" data-color="#84CC16"></div>
+                                <div class="color-item" style="background: #F59E0B;" data-color="#F59E0B"></div>
+                                <div class="color-item" style="background: #F97316;" data-color="#F97316"></div>
+                                <div class="color-item" style="background: #EF4444;" data-color="#EF4444"></div>
+                                <div class="color-item" style="background: #EC4899;" data-color="#EC4899"></div>
+                                <div class="color-item" style="background: #F472B6;" data-color="#F472B6"></div>
+                                <div class="color-item" style="background: #A855F7;" data-color="#A855F7"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 预览效果 -->
+                <div class="preview-section">
+                    <div class="preview-icon" id="previewIcon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                        </svg>
+                    </div>
+                    <span class="preview-text">预览效果</span>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button class="btn btn-create" onclick="createHabit()">创建</button>
+                <button class="btn btn-cancel" onclick="closeHabitModal()">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 其他功能页面 -->
+    <div class="more-page" id="morePage">
+        <!-- 深灰色头部 -->
+        <header class="more-header">
+            <div class="more-header-content">
+                <button class="back-btn-white" onclick="hideMorePage()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                </button>
+                <div class="more-titles">
+                    <h1 class="more-main-title">其他功能</h1>
+                    <p class="more-sub-title">更多工具和管理功能</p>
+                </div>
+            </div>
+        </header>
+        
+        <!-- 页面内容 -->
+        <div class="more-content">
+            <!-- 微信客服卡片 -->
+            <div class="wechat-card">
+                <div class="wechat-info">
+                    <div class="wechat-icon">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M8.691 2.188C3.891 2.188 0 5.476 0 9.53c0 2.212 1.17 4.203 3.002 5.55a.59.59 0 0 1 .213.665l-.39 1.48c-.019.07-.048.141-.048.213 0 .163.13.295.29.295a.326.326 0 0 0 .167-.054l1.903-1.114a.864.864 0 0 1 .717-.098 10.16 10.16 0 0 0 2.837.403c.276 0 .543-.027.811-.05-.857-2.578.157-4.972 1.932-6.446 1.703-1.415 3.882-1.98 5.853-1.838-.576-3.583-4.196-6.348-8.596-6.348zM5.785 5.991c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 0 1-1.162 1.178A1.17 1.17 0 0 1 4.623 7.17c0-.651.52-1.18 1.162-1.18zm5.813 0c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 0 1-1.162 1.178 1.17 1.17 0 0 1-1.162-1.178c0-.651.52-1.18 1.162-1.18zm5.34 2.867c-1.797-.052-3.746.512-5.28 1.786-1.72 1.428-2.687 3.72-1.78 6.22.942 2.453 3.666 4.229 6.884 4.229.826 0 1.622-.12 2.361-.336a.722.722 0 0 1 .598.082l1.584.926a.272.272 0 0 0 .14.045c.134 0 .24-.111.24-.247 0-.06-.023-.12-.038-.177l-.327-1.233a.582.582 0 0 1-.023-.156.49.49 0 0 1 .201-.398C23.024 18.48 24 16.82 24 14.98c0-3.21-2.931-5.837-6.656-6.088V8.89c-.135-.01-.269-.03-.407-.03zm-2.53 3.274c.535 0 .969.44.969.982a.976.976 0 0 1-.969.983.976.976 0 0 1-.969-.983c0-.542.434-.982.97-.982zm4.844 0c.535 0 .969.44.969.982a.976.976 0 0 1-.969.983.976.976 0 0 1-.969-.983c0-.542.434-.982.969-.982z"/>
+                        </svg>
+                    </div>
+                    <div class="wechat-text">
+                        <h3 class="wechat-title">微信客服</h3>
+                        <p class="wechat-desc">扫码添加作者，加入交流群、沟通问题或分销合作。</p>
+                        <p class="wechat-hint">添加时可备注"问题沟通 / 分销合作"，方便快速通过。</p>
+                    </div>
+                </div>
+                <div class="wechat-qr">
+                    <div class="qr-placeholder-large">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="1">
+                            <rect x="3" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="14" width="7" height="7"></rect>
+                            <rect x="3" y="14" width="7" height="7"></rect>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 会员功能 -->
+            <div class="more-section">
+                <div class="more-section-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2">
+                        <path d="M2 4l2-2 4 4 4-4 4 4 4-4 2 2"></path>
+                        <path d="M2 10l2-2 4 4 4-4 4 4 4-4 2 2"></path>
+                        <path d="M2 16l2-2 4 4 4-4 4 4 4-4 2 2"></path>
+                    </svg>
+                    会员功能
+                </div>
+                <div class="more-grid">
+                    <div class="more-card large" onclick="showPointsPage()">
+                        <div class="more-card-icon orange">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M2 4l2-2 4 4 4-4 4 4 4-4 2 2"></path>
+                                <path d="M2 10l2-2 4 4 4-4 4 4 4-4 2 2"></path>
+                                <path d="M2 16l2-2 4 4 4-4 4 4 4-4 2 2"></path>
+                            </svg>
+                        </div>
+                        <div class="more-card-content">
+                            <h4 class="more-card-title">会员管理</h4>
+                            <p class="more-card-desc">查看会员状态和权限</p>
+                        </div>
+                        <div class="more-card-arrow">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
+                        </div>
+                    </div>
+                    
+                    <div class="more-card">
+                        <div class="more-card-icon purple">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="9" y1="9" x2="15" y2="9"></line>
+                                <line x1="9" y1="15" x2="15" y2="15"></line>
+                            </svg>
+                        </div>
+                        <h4 class="more-card-title">兑换码</h4>
+                        <p class="more-card-desc">输入兑换码升级会员</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 通用功能 -->
+            <div class="more-section">
+                <div class="more-section-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#4A7BF7" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M12 1v6m0 6v6m4.22-10.22l4.24-4.24M6.34 17.66l-4.24 4.24M23 12h-6m-6 0H1m20.24 4.24l-4.24-4.24M6.34 6.34L2.1 2.1"></path>
+                    </svg>
+                    通用功能
+                </div>
+                <div class="more-grid">
+                    <div class="more-card" onclick="hideMorePage(); switchTab('habit')">
+                        <div class="more-card-icon pink">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                            </svg>
+                        </div>
+                        <h4 class="more-card-title">行为习惯</h4>
+                        <p class="more-card-desc">打卡培养好习惯，赚取星星积分</p>
+                    </div>
+                    
+                    <div class="more-card">
+                        <span class="new-badge">新功能</span>
+                        <div class="more-card-icon blue">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                            </svg>
+                        </div>
+                        <h4 class="more-card-title">我的阅读</h4>
+                        <p class="more-card-desc">管理书架、记录阅读、查看阅读统计</p>
+                    </div>
+                    
+                    <div class="more-card">
+                        <span class="new-badge">新功能</span>
+                        <div class="more-card-icon blue">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                        </div>
+                        <h4 class="more-card-title">337晨读</h4>
+                        <p class="more-card-desc">科学高效的阅读复习方法</p>
+                    </div>
+                    
+                    <div class="more-card large" onclick="showHelpPage()">
+                        <div class="more-card-icon light-blue">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                            </svg>
+                        </div>
+                        <div class="more-card-content">
+                            <h4 class="more-card-title">听写背诵</h4>
+                            <p class="more-card-desc">听写练习与背诵巩固</p>
+                        </div>
+                        <div class="more-card-arrow">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
+                        </div>
+                    </div>
+                    
+                    <div class="more-card">
+                        <span class="new-badge">新功能</span>
+                        <div class="more-card-icon purple">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                        </div>
+                        <h4 class="more-card-title">专注计时器</h4>
+                        <p class="more-card-desc">正计时、倒计时、番茄钟一体</p>
+                    </div>
+                    
+                    <div class="more-card">
+                        <span class="new-badge">新功能</span>
+                        <div class="more-card-icon orange">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="9" cy="21" r="1"></circle>
+                                <circle cx="20" cy="21" r="1"></circle>
+                                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                            </svg>
+                        </div>
+                        <h4 class="more-card-title">电子宠物</h4>
+                        <p class="more-card-desc">领养小伙伴，花星星照顾它一起成长</p>
+                    </div>
+                    
+                    <div class="more-card">
+                        <span class="new-badge">新功能</span>
+                        <div class="more-card-icon orange-light">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                            </svg>
+                        </div>
+                        <h4 class="more-card-title">计划精选</h4>
+                        <p class="more-card-desc">浏览和使用优质学习计划</p>
+                    </div>
+                    
+                    <div class="more-card">
+                        <span class="new-badge">新功能</span>
+                        <div class="more-card-icon purple">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 20V10"></path>
+                                <path d="M12 20V4"></path>
+                                <path d="M6 20v-6"></path>
+                            </svg>
+                        </div>
+                        <h4 class="more-card-title">成绩追踪</h4>
+                        <p class="more-card-desc">记录考试成绩，跟踪学习进步</p>
+                    </div>
+                    
+                    <div class="more-card">
+                        <span class="new-badge">新功能</span>
+                        <div class="more-card-icon green">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                                <polyline points="10 9 9 9 8 9"></polyline>
+                            </svg>
+                        </div>
+                        <h4 class="more-card-title">成绩分析</h4>
+                        <p class="more-card-desc">薄弱知识点分析与专项练习</p>
+                    </div>
+                    
+                    <div class="more-card">
+                        <span class="new-badge">新功能</span>
+                        <div class="more-card-icon blue">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                                <path d="M10 13v5"></path>
+                                <path d="M14 13v5"></path>
+                                <rect x="6" y="9" width="12" height="12" rx="2" ry="2"></rect>
+                            </svg>
+                        </div>
+                        <h4 class="more-card-title">任务打印</h4>
+                        <p class="more-card-desc">打印每日或每周学习任务清单</p>
+                    </div>
+                    
+                    <div class="more-card">
+                        <span class="new-badge">新功能</span>
+                        <div class="more-card-icon purple">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="9" y1="9" x2="15" y2="9"></line>
+                                <line x1="9" y1="15" x2="15" y2="15"></line>
+                            </svg>
+                        </div>
+                        <h4 class="more-card-title">待办事项</h4>
+                        <p class="more-card-desc">记录待办并一键创建学习计划</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 系统设置 -->
+            <div class="more-section">
+                <div class="more-section-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                    系统设置
+                </div>
+                <div class="more-grid">
+                    <div class="more-card large">
+                        <span class="new-badge">新功能</span>
+                        <div class="more-card-icon orange">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
+                                <line x1="9" y1="9" x2="9.01" y2="9"></line>
+                                <line x1="15" y1="9" x2="15.01" y2="9"></line>
+                            </svg>
+                        </div>
+                        <div class="more-card-content">
+                            <h4 class="more-card-title">儿童模式设置</h4>
+                            <p class="more-card-desc">家长控制，限制孩子访问管理功能</p>
+                        </div>
+                        <div class="more-card-arrow">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
+                        </div>
+                    </div>
+                    
+                    <div class="more-card">
+                        <span class="new-badge">新功能</span>
+                        <div class="more-card-icon teal">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                            </svg>
+                        </div>
+                        <h4 class="more-card-title">账号密码修改</h4>
+                        <p class="more-card-desc">修改登录账号密码</p>
+                    </div>
+                    
+                    <div class="more-card">
+                        <div class="more-card-icon purple">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                        </div>
+                        <h4 class="more-card-title">用户管理</h4>
+                        <p class="more-card-desc">管理用户账户和权限</p>
+                    </div>
+                    
+                    <div class="more-card">
+                        <span class="new-badge">新功能</span>
+                        <div class="more-card-icon blue">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="7" height="7"></rect>
+                                <rect x="14" y="3" width="7" height="7"></rect>
+                                <rect x="14" y="14" width="7" height="7"></rect>
+                                <rect x="3" y="14" width="7" height="7"></rect>
+                            </svg>
+                        </div>
+                        <h4 class="more-card-title">仪表盘配置</h4>
+                        <p class="more-card-desc">自定义仪表盘模块显示和排序</p>
+                    </div>
+                    
+                    <div class="more-card">
+                        <div class="more-card-icon gray">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="3"></circle>
+                                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                            </svg>
+                        </div>
+                        <h4 class="more-card-title">系统设置</h4>
+                        <p class="more-card-desc">管理奖励系统和应用偏好</p>
+                    </div>
+                    
+                    <div class="more-card">
+                        <div class="more-card-icon green">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                        </div>
+                        <h4 class="more-card-title">数据导出</h4>
+                        <p class="more-card-desc">导出学习数据和统计信息</p>
+                    </div>
+                    
+                    <div class="more-card">
+                        <div class="more-card-icon purple">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                        </div>
+                        <h4 class="more-card-title">数据导入</h4>
+                        <p class="more-card-desc">从备份文件恢复学习数据</p>
+                    </div>
+                    
+                    <div class="more-card" onclick="hideMorePage(); showHelpPage();">
+                        <span class="new-badge">新功能</span>
+                        <div class="more-card-icon orange">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                            </svg>
+                        </div>
+                        <h4 class="more-card-title">使用帮助</h4>
+                        <p class="more-card-desc">查看使用指南和常见问题</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 学校与机构 -->
+            <div class="more-section">
+                <div class="more-section-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" stroke-width="2">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                    </svg>
+                    学校与机构
+                </div>
+                <div class="more-grid">
+                    <div class="more-card large">
+                        <span class="new-badge">新功能</span>
+                        <div class="more-card-icon purple">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                            </svg>
+                        </div>
+                        <div class="more-card-content">
+                            <h4 class="more-card-title highlight">班级管理（老师）</h4>
+                            <p class="more-card-desc">创建班级，发布学习计划</p>
+                        </div>
+                        <div class="more-card-arrow">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
+                        </div>
+                    </div>
+                    
+                    <div class="more-card">
+                        <span class="new-badge">新功能</span>
+                        <div class="more-card-icon orange">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                            </svg>
+                        </div>
+                        <h4 class="more-card-title">我的班级（学生）</h4>
+                        <p class="more-card-desc">查看加入的班级和作业</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 其他功能 -->
+            <div class="more-section">
+                <div class="more-section-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#14B8A6" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                    其他功能
+                </div>
+                <div class="more-grid">
+                    <div class="more-card">
+                        <span class="new-badge">新功能</span>
+                        <div class="more-card-icon teal">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M23 6l-9.5 8.5-5-5L1 18"></path>
+                                <path d="M17 6h6v6"></path>
+                            </svg>
+                        </div>
+                        <h4 class="more-card-title">身高管理</h4>
+                        <p class="more-card-desc">记录身高体重，追踪生长趋势</p>
+                    </div>
+                    
+                    <div class="more-card">
+                        <span class="new-badge">新功能</span>
+                        <div class="more-card-icon orange">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="9" cy="21" r="1"></circle>
+                                <circle cx="20" cy="21" r="1"></circle>
+                                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                            </svg>
+                        </div>
+                        <h4 class="more-card-title">存钱罐</h4>
+                        <p class="more-card-desc">记录存取，查看余额与流水</p>
+                    </div>
+                    
+                    <div class="more-card">
+                        <span class="new-badge">新功能</span>
+                        <div class="more-card-icon purple">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
+                                <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
+                            </svg>
+                        </div>
+                        <h4 class="more-card-title">兴趣班记录</h4>
+                        <p class="more-card-desc">记录兴趣班信息、课时消耗与上课明细</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 使用帮助页面 -->
+    <div class="help-page" id="helpPage">
+        <!-- 橙色头部 -->
+        <header class="help-header">
+            <div class="help-header-content">
+                <button class="back-btn-white" onclick="hideHelpPage()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                </button>
+                <div class="help-titles">
+                    <h1 class="help-main-title">使用帮助</h1>
+                    <p class="help-sub-title">详细操作手册：每个功能怎么用，一次讲清</p>
+                </div>
+            </div>
+        </header>
+        
+        <!-- 页面内容 -->
+        <div class="help-content">
+            <!-- 快速上手路线 -->
+            <div class="help-card">
+                <div class="help-card-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#4A7BF7" stroke-width="2">
+                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                    </svg>
+                    快速上手路线（推荐）
+                </div>
+                <div class="help-steps">
+                    <div class="help-step">
+                        <span class="step-num">1.</span>
+                        <span class="step-text">先添加 3~5 个核心学习计划（每天可执行）。</span>
+                    </div>
+                    <div class="help-step">
+                        <span class="step-num">2.</span>
+                        <span class="step-text">用待办收集零散任务，再转为正式计划。</span>
+                    </div>
+                    <div class="help-step">
+                        <span class="step-num">3.</span>
+                        <span class="step-text">连续打卡 7 天后，看图表统计做一次复盘。</span>
+                    </div>
+                    <div class="help-step">
+                        <span class="step-num">4.</span>
+                        <span class="step-text">录入考试成绩，再用成绩分析生成专项提升计划。</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 添加计划字段说明 -->
+            <div class="help-card">
+                <div class="help-card-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                    </svg>
+                    添加计划字段说明（详细）
+                </div>
+                <div class="help-text">
+                    <p><strong>必填：</strong>计划名称、重复类型、目标日期/起始日期。</p>
+                    <p><strong>可填：</strong>类别、计划内容、时间模式、附件、积分与审定设置。</p>
+                </div>
+                <div class="help-subtitle">重复类型解释</div>
+                <div class="help-list">
+                    <div class="help-list-item">
+                        <span class="list-icon success">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                        </span>
+                        <span><strong>仅当天：</strong>只在目标日期创建 1 次任务，适合临时安排。</span>
+                    </div>
+                    <div class="help-list-item">
+                        <span class="list-icon success">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                        </span>
+                        <span><strong>每天：</strong>从起始日期开始每天生成任务，适合日常固定动作。</span>
+                    </div>
+                    <div class="help-list-item">
+                        <span class="list-icon success">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                        </span>
+                        <span><strong>每周：</strong>按勾选的周几重复（如周一/周三/周五）。</span>
+                    </div>
+                    <div class="help-list-item">
+                        <span class="list-icon success">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                        </span>
+                        <span><strong>每双周：</strong>按双周节奏重复，适合隔周任务。</span>
+                    </div>
+                    <div class="help-list-item">
+                        <span class="list-icon success">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                        </span>
+                        <span><strong>艾宾浩斯：</strong>按记忆曲线自动生成复习节奏，适合背诵/记忆类内容。</span>
+                    </div>
+                    <div class="help-list-item">
+                        <span class="list-icon info">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="16" x2="12" y2="12"></line>
+                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                        </span>
+                        <span><strong>本周一次/本月一次：</strong>跨日任务：在当前周期内完成目标次数。</span>
+                    </div>
+                    <div class="help-list-item">
+                        <span class="list-icon success">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                        </span>
+                        <span><strong>每周一次/每月一次：</strong>跨日任务：每个周期至少完成设定次数。</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 功能说明卡片网格 -->
+            <div class="help-features-grid">
+                <!-- 学习计划 -->
+                <div class="feature-card">
+                    <div class="feature-header">
+                        <div class="feature-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#4A7BF7" stroke-width="2">
+                                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                            </svg>
+                            学习计划（添加 / AI / 批量）
+                        </div>
+                        <button class="btn-go">前往功能</button>
+                    </div>
+                    <div class="feature-section">
+                        <div class="feature-section-title">怎么操作</div>
+                        <ul class="feature-list">
+                            <li>先用"添加计划"建核心任务：名称、重复类型、日期是重点。</li>
+                            <li>需要快速录入时用"批量添加"，按"类别 + 编号任务"粘贴。</li>
+                            <li>需求不规则时用"AI 添加"，先生成草稿再确认。</li>
+                        </ul>
+                    </div>
+                    <div class="feature-section">
+                        <div class="feature-section-title">使用建议</div>
+                        <ul class="feature-list">
+                            <li>计划名称建议写成"动作 + 对象 + 时长/数量"。</li>
+                            <li>跨日任务建议设置允许完成日，避免和其他任务冲突。</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- 待办事项 -->
+                <div class="feature-card">
+                    <div class="feature-header">
+                        <div class="feature-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" stroke-width="2">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="9" y1="9" x2="15" y2="9"></line>
+                                <line x1="9" y1="15" x2="15" y2="15"></line>
+                            </svg>
+                            待办事项（转计划）
+                        </div>
+                        <button class="btn-go">前往功能</button>
+                    </div>
+                    <div class="feature-section">
+                        <div class="feature-section-title">怎么操作</div>
+                        <ul class="feature-list">
+                            <li>先把零散想法记到待办（内容 + 备注）。</li>
+                            <li>点击"转为计划"，系统会自动预填到计划表单。</li>
+                            <li>校对后保存，待办会自动标记为"已关联计划"。</li>
+                        </ul>
+                    </div>
+                    <div class="feature-section">
+                        <div class="feature-section-title">使用建议</div>
+                        <ul class="feature-list">
+                            <li>适合把临时灵感转成可执行计划，减少遗漏。</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- 成绩追踪 -->
+                <div class="feature-card">
+                    <div class="feature-header">
+                        <div class="feature-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#22C55E" stroke-width="2">
+                                <path d="M18 20V10"></path>
+                                <path d="M12 20V4"></path>
+                                <path d="M6 20v-6"></path>
+                            </svg>
+                            成绩追踪 + 成绩分析
+                        </div>
+                        <button class="btn-go">前往功能</button>
+                    </div>
+                    <div class="feature-section">
+                        <div class="feature-section-title">怎么操作</div>
+                        <ul class="feature-list">
+                            <li>先在成绩追踪录入考试记录（科目、分数、日期、满分）。</li>
+                            <li>再进成绩分析查看薄弱点、题型分布和趋势。</li>
+                            <li>从分析结果创建专项练习计划，形成闭环提升。</li>
+                        </ul>
+                    </div>
+                    <div class="feature-section">
+                        <div class="feature-section-title">使用建议</div>
+                        <ul class="feature-list">
+                            <li>同学科建议至少录入 3 次考试，分析结果更稳定。</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- 图表统计 -->
+                <div class="feature-card">
+                    <div class="feature-header">
+                        <div class="feature-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#A855F7" stroke-width="2">
+                                <line x1="18" y1="20" x2="18" y2="10"></line>
+                                <line x1="12" y1="20" x2="12" y2="4"></line>
+                                <line x1="6" y1="20" x2="6" y2="14"></line>
+                            </svg>
+                            图表统计（复盘）
+                        </div>
+                        <button class="btn-go">前往功能</button>
+                    </div>
+                    <div class="feature-section">
+                        <div class="feature-section-title">怎么操作</div>
+                        <ul class="feature-list">
+                            <li>看完成率：判断执行稳定性。</li>
+                            <li>看时长与分类占比：判断是否偏科、投入是否均衡。</li>
+                            <li>看趋势线：重点关注 7 天/30 天变化。</li>
+                        </ul>
+                    </div>
+                    <div class="feature-section">
+                        <div class="feature-section-title">使用建议</div>
+                        <ul class="feature-list">
+                            <li>建议固定每周复盘一次，并据此调整下周计划配比。</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- 行为习惯 -->
+                <div class="feature-card">
+                    <div class="feature-header">
+                        <div class="feature-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#EC4899" stroke-width="2">
+                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                            </svg>
+                            行为习惯
+                        </div>
+                        <button class="btn-go" onclick="hideHelpPage(); switchTab('habit')">前往功能</button>
+                    </div>
+                    <div class="feature-section">
+                        <div class="feature-section-title">怎么操作</div>
+                        <ul class="feature-list">
+                            <li>在"习惯管理"创建习惯（如晨读、运动、早睡）。</li>
+                            <li>每日打卡，持续积累星星积分。</li>
+                            <li>在习惯统计页查看连续天数与完成率。</li>
+                        </ul>
+                    </div>
+                    <div class="feature-section">
+                        <div class="feature-section-title">使用建议</div>
+                        <ul class="feature-list">
+                            <li>先从 1~2 个习惯开始，不建议一次建太多。</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- 听写背诵 -->
+                <div class="feature-card">
+                    <div class="feature-header">
+                        <div class="feature-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#14B8A6" stroke-width="2">
+                                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                            </svg>
+                            听写背诵
+                        </div>
+                        <button class="btn-go">前往功能</button>
+                    </div>
+                    <div class="feature-section">
+                        <div class="feature-section-title">怎么操作</div>
+                        <ul class="feature-list">
+                            <li>输入文本后先分段（换行/空格/AI 分段）。</li>
+                            <li>设置播放顺序、重复次数、间隔，再开始听写。</li>
+                            <li>切换背诵模式做挖空练习，最后看历史记录。</li>
+                        </ul>
+                    </div>
+                    <div class="feature-section">
+                        <div class="feature-section-title">使用建议</div>
+                        <ul class="feature-list">
+                            <li>先用短文本调好参数，再练长文本，体验更好。</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- 任务打印 -->
+                <div class="feature-card">
+                    <div class="feature-header">
+                        <div class="feature-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2">
+                                <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                                <path d="M10 13v5"></path>
+                                <path d="M14 13v5"></path>
+                                <rect x="6" y="9" width="12" height="12" rx="2" ry="2"></rect>
+                            </svg>
+                            任务打印
+                        </div>
+                        <button class="btn-go">前往功能</button>
+                    </div>
+                    <div class="feature-section">
+                        <div class="feature-section-title">怎么操作</div>
+                        <ul class="feature-list">
+                            <li>选择打印范围（按日/按周）。</li>
+                            <li>确认包含模块和格式后导出。</li>
+                            <li>打印前先预览，避免日期或项目遗漏。</li>
+                        </ul>
+                    </div>
+                    <div class="feature-section">
+                        <div class="feature-section-title">使用建议</div>
+                        <ul class="feature-list">
+                            <li>建议在周日晚统一打印下周任务清单。</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- 身高管理 -->
+                <div class="feature-card">
+                    <div class="feature-header">
+                        <div class="feature-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#22C55E" stroke-width="2">
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                            </svg>
+                            身高管理
+                        </div>
+                        <button class="btn-go">前往功能</button>
+                    </div>
+                    <div class="feature-section">
+                        <div class="feature-section-title">怎么操作</div>
+                        <ul class="feature-list">
+                            <li>在档案页完善基础信息。</li>
+                            <li>定期记录身高体重与相关习惯。</li>
+                            <li>在报告页查看趋势和阶段变化。</li>
+                        </ul>
+                    </div>
+                    <div class="feature-section">
+                        <div class="feature-section-title">使用建议</div>
+                        <ul class="feature-list">
+                            <li>固定同一时间测量，数据可比性更强。</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- 存钱罐 -->
+                <div class="feature-card">
+                    <div class="feature-header">
+                        <div class="feature-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2">
+                                <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                                <path d="M2 17l10 5 10-5"></path>
+                                <path d="M2 12l10 5 10-5"></path>
+                            </svg>
+                            存钱罐 + 兴趣班记录
+                        </div>
+                        <button class="btn-go">前往功能</button>
+                    </div>
+                    <div class="feature-section">
+                        <div class="feature-section-title">怎么操作</div>
+                        <ul class="feature-list">
+                            <li>存钱罐记录每次存取，关注余额与流水。</li>
+                            <li>兴趣班记录课程、课时消耗和上课明细。</li>
+                            <li>定期复盘投入和产出，帮助家长决策。</li>
+                        </ul>
+                    </div>
+                    <div class="feature-section">
+                        <div class="feature-section-title">使用建议</div>
+                        <ul class="feature-list">
+                            <li>建议每月做一次汇总，便于长期对比。</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- 我的阅读 -->
+                <div class="feature-card">
+                    <div class="feature-header">
+                        <div class="feature-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#4A7BF7" stroke-width="2">
+                                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                            </svg>
+                            我的阅读
+                        </div>
+                        <button class="btn-go">前往功能</button>
+                    </div>
+                    <div class="feature-section">
+                        <div class="feature-section-title">怎么操作</div>
+                        <ul class="feature-list">
+                            <li>先在书架里添加书籍，补充分类、总页数等基础信息。</li>
+                            <li>每次阅读后记录日期、页码范围、时长和心得。</li>
+                            <li>去统计页查看阅读趋势、分类分布和累计数据。</li>
+                        </ul>
+                    </div>
+                    <div class="feature-section">
+                        <div class="feature-section-title">使用建议</div>
+                        <ul class="feature-list">
+                            <li>拍照识别后续会补上，第一期先支持手动录入与统计。</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- 337晨读 -->
+                <div class="feature-card">
+                    <div class="feature-header">
+                        <div class="feature-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#A855F7" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                            337 晨读 + 专注计时器
+                        </div>
+                        <button class="btn-go">前往功能</button>
+                    </div>
+                    <div class="feature-section">
+                        <div class="feature-section-title">怎么操作</div>
+                        <ul class="feature-list">
+                            <li>337 晨读：先建计划，再按每日任务打卡。</li>
+                            <li>计时器：按场景选择正计时/倒计时/番茄钟。</li>
+                            <li>把计时器与计划任务结合，提升执行专注度。</li>
+                        </ul>
+                    </div>
+                    <div class="feature-section">
+                        <div class="feature-section-title">使用建议</div>
+                        <ul class="feature-list">
+                            <li>建议设置固定学习时段，形成稳定节奏。</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- 班级协作 -->
+                <div class="feature-card">
+                    <div class="feature-header">
+                        <div class="feature-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#EC4899" stroke-width="2">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                            </svg>
+                            老师/学生班级协作
+                        </div>
+                        <button class="btn-go">前往功能</button>
+                    </div>
+                    <div class="feature-section">
+                        <div class="feature-section-title">怎么操作</div>
+                        <ul class="feature-list">
+                            <li>老师端：创建班级、发布学习计划、查看完成进度。</li>
+                            <li>学生端：加入班级、接收任务、跟进作业完成。</li>
+                            <li>按周看班级整体完成情况并及时调整。</li>
+                        </ul>
+                    </div>
+                    <div class="feature-section">
+                        <div class="feature-section-title">使用建议</div>
+                        <ul class="feature-list">
+                            <li>老师发布任务时建议统一命名规范，便于统计。</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 积分和成就页面（会员页面） -->
+    <div class="points-page" id="pointsPage">
+        <!-- 紫色头部 -->
+        <header class="points-header">
+            <div class="points-header-content">
+                <button class="back-btn-white" onclick="hidePointsPage()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                </button>
+                <div class="points-titles">
+                    <h1 class="points-main-title">我的积分和成就</h1>
+                    <p class="points-sub-title">完成学习任务，攒星星，兑换愿望！</p>
+                </div>
+            </div>
+        </header>
+        
+        <!-- 页面内容 -->
+        <div class="points-content">
+            <!-- 解锁高级功能卡片 -->
+            <div class="upgrade-card">
+                <div class="upgrade-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M2 4l2-2 4 4 4-4 4 4 4-4 2 2"></path>
+                        <path d="M2 10l2-2 4 4 4-4 4 4 4-4 2 2"></path>
+                        <path d="M2 16l2-2 4 4 4-4 4 4 4-4 2 2"></path>
+                    </svg>
+                </div>
+                <h2 class="upgrade-title">解锁高级功能</h2>
+                <p class="upgrade-desc">升级会员，享受更多专属特权</p>
+                <button class="btn-back-home" onclick="hidePointsPage()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                    返回主页
+                </button>
+            </div>
+            
+            <!-- 当前会员信息 -->
+            <div class="membership-card">
+                <div class="membership-info">
+                    <div class="membership-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                    </div>
+                    <div class="membership-text">
+                        <span class="membership-label">当前会员</span>
+                        <span class="membership-type">试用用户</span>
+                    </div>
+                </div>
+                <span class="membership-status expired">已过期</span>
+                <p class="membership-hint">会员已到期，请续费后使用此功能</p>
+            </div>
+            
+            <!-- 选择套餐 -->
+            <div class="plans-section">
+                <h3 class="section-title">选择您的套餐</h3>
+                <div class="plans-grid">
+                    <!-- 年度会员 -->
+                    <div class="plan-card">
+                        <div class="plan-icon yearly">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M2 4l2-2 4 4 4-4 4 4 4-4 2 2"></path>
+                                <path d="M2 10l2-2 4 4 4-4 4 4 4-4 2 2"></path>
+                                <path d="M2 16l2-2 4 4 4-4 4 4 4-4 2 2"></path>
+                            </svg>
+                        </div>
+                        <div class="plan-info">
+                            <h4 class="plan-name">年度会员</h4>
+                            <p class="plan-desc">全功能访问 · 12个月</p>
+                            <div class="plan-tags">
+                                <span class="plan-tag">无广告</span>
+                                <span class="plan-tag">优先支持</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 永久会员 -->
+                    <div class="plan-card recommended">
+                        <div class="recommend-badge">推荐</div>
+                        <div class="plan-icon permanent">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                            </svg>
+                        </div>
+                        <div class="plan-info">
+                            <h4 class="plan-name">永久会员</h4>
+                            <p class="plan-desc">终身享受 · 一次购买</p>
+                            <div class="plan-tags">
+                                <span class="plan-tag purple">永久更新</span>
+                                <span class="plan-tag purple">超值划算</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 获取会员码 -->
+            <div class="qr-section">
+                <div class="qr-code">
+                    <div class="qr-placeholder">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="1">
+                            <rect x="3" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="14" width="7" height="7"></rect>
+                            <rect x="3" y="14" width="7" height="7"></rect>
+                        </svg>
+                    </div>
+                </div>
+                <div class="qr-info">
+                    <h4 class="qr-title">获取会员码</h4>
+                    <p class="qr-desc">扫描二维码联系购买，或直接兑换已有的会员码</p>
+                    <div class="qr-actions">
+                        <button class="btn-redeem">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="9" y1="9" x2="15" y2="9"></line>
+                                <line x1="9" y1="15" x2="15" y2="15"></line>
+                            </svg>
+                            立即兑换
+                        </button>
+                        <button class="btn-details">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                <polyline points="15 3 21 3 21 9"></polyline>
+                                <line x1="10" y1="14" x2="21" y2="3"></line>
+                            </svg>
+                            了解详情
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 会员特权 -->
+            <div class="privileges-section">
+                <h3 class="section-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                    </svg>
+                    会员特权
+                </h3>
+                <div class="privileges-grid">
+                    <div class="privilege-item">
+                        <span class="privilege-dot"></span>
+                        <span class="privilege-text">解锁全部高级功能</span>
+                    </div>
+                    <div class="privilege-item">
+                        <span class="privilege-dot"></span>
+                        <span class="privilege-text">详细数据统计分析</span>
+                    </div>
+                    <div class="privilege-item">
+                        <span class="privilege-dot"></span>
+                        <span class="privilege-text">完整荣誉勋章系统</span>
+                    </div>
+                    <div class="privilege-item">
+                        <span class="privilege-dot"></span>
+                        <span class="privilege-text">优先获得新功能</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 右侧浮动工具按钮 -->
+    <div class="floating-tools">
+        <div class="tool-btn primary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                <path d="M2 17l10 5 10-5"></path>
+                <path d="M2 12l10 5 10-5"></path>
+            </svg>
+        </div>
+        <div class="tool-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M12 1v6m0 6v6m4.22-10.22l4.24-4.24M6.34 17.66l-4.24 4.24M23 12h-6m-6 0H1m20.24 4.24l-4.24-4.24M6.34 6.34L2.1 2.1"></path>
+            </svg>
+        </div>
+        <div class="tool-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+            </svg>
+        </div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/main.js"></script>
+</body>
+</html>
