@@ -621,15 +621,6 @@ async function deleteHabit(habitId) {
     }
 }
 
-// 显示习惯管理视图
-function showHabitManageView() {
-    const container = document.querySelector('.habit-cards');
-    if (!container) return;
-    
-    // 添加管理按钮到每个习惯卡片
-    renderHabitListWithManage();
-}
-
 function renderHabitListWithManage() {
     const container = document.querySelector('.habit-cards');
     if (!container) return;
@@ -1229,15 +1220,6 @@ async function renderHabitManageList() {
     } catch (error) {
         console.error('加载习惯管理列表失败:', error);
         listContainer.innerHTML = '<p style="text-align: center; color: #EF4444;">加载失败，请重试</p>';
-    }
-}
-
-async function editHabit(habitId) {
-    // 使用习惯管理模态框进行编辑
-    openHabitModal(habitId);
-}
-    } catch (error) {
-        showToast(error.message || '删除失败', 'error');
     }
 }
 
@@ -1903,77 +1885,4 @@ function changeHabitWeek(direction) {
 function goToHabitToday() {
     currentDate = API.utils.getBeijingTime();
     updateHabitCalendar();
-}
-
-// ============================================
-// 隐藏习惯管理视图
-// ============================================
-function hideHabitManageView() {
-    const manageView = document.getElementById('habitManageView');
-    if (manageView) {
-        manageView.style.display = 'none';
-    }
-    document.body.style.overflow = '';
-}
-
-// ============================================
-// 渲染习惯管理列表
-// ============================================
-async function renderHabitManageList() {
-    const listContainer = document.getElementById('habitManageList');
-    if (!listContainer) return;
-    
-    try {
-        const response = await API.habits.getList({ status: 'active' });
-        const habitList = response.data.list || [];
-        
-        if (habitList.length === 0) {
-            listContainer.innerHTML = '<p style="text-align: center; color: #6B7280; padding: 40px;">还没有习惯，快去创建一个吧！</p>';
-            return;
-        }
-        
-        listContainer.innerHTML = habitList.map(habit => `
-            <div class="habit-manage-item" data-id="${habit.id}" style="
-                background: white;
-                border-radius: 12px;
-                padding: 16px 20px;
-                margin-bottom: 12px;
-                display: flex;
-                align-items: center;
-                gap: 16px;
-                box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            ">
-                <div class="habit-icon" style="
-                    width: 48px;
-                    height: 48px;
-                    background: ${habit.color || '#4A7BF7'};
-                    border-radius: 12px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    color: white;
-                    flex-shrink: 0;
-                ">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 24px; height: 24px;">
-                        ${getIconSvg(habit.icon)}
-                    </svg>
-                </div>
-                <div class="habit-info" style="flex: 1;">
-                    <h4 style="font-size: 16px; font-weight: 600; color: #1F2937; margin-bottom: 4px;">${habit.name}</h4>
-                    <p style="font-size: 13px; color: #6B7280;">${getHabitTypeText(habit.habit_type)} · ${habit.points > 0 ? '+' : ''}${habit.points}⭐</p>
-                </div>
-                <div class="habit-actions" style="display: flex; gap: 8px;">
-                    <button class="nav-btn" onclick="editHabit(${habit.id})" style="padding: 8px 16px; font-size: 13px;">
-                        编辑
-                    </button>
-                    <button class="nav-btn" onclick="deleteHabit(${habit.id})" style="padding: 8px 16px; font-size: 13px; color: #EF4444;">
-                        删除
-                    </button>
-                </div>
-            </div>
-        `).join('');
-    } catch (error) {
-        console.error('加载习惯管理列表失败:', error);
-        listContainer.innerHTML = '<p style="text-align: center; color: #EF4444;">加载失败，请重试</p>';
-    }
 }
