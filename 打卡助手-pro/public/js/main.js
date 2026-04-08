@@ -11,6 +11,18 @@ let currentEditingHabitId = null; // 当前编辑的习惯ID
 let selectedIcon = 'star';
 let selectedColor = '#4A7BF7';
 
+// 学习计划和打卡时间记录
+let studyPlans = []; // 学习计划列表
+let todayStudyTime = 0; // 今日学习时间（分钟）
+let todaySportTime = 0; // 今日运动时间（分钟）
+
+// 习惯分类映射（用于统计学习时间/运动时间）
+const HABIT_CATEGORIES = {
+    '学习': ['book', 'edit', 'file', 'calendar', 'clock', 'star'],
+    '运动': ['activity', 'sun', 'heart'],
+    '其他': ['moon', 'check', 'target', 'award', 'trophy', 'bookmark', 'default']
+};
+
 // ============================================
 // 图标SVG映射
 // ============================================
@@ -432,12 +444,23 @@ async function loadStats() {
             ? Math.round((completedHabits / totalHabits) * 100) 
             : 0;
         
+        // 计算今日学习时间和运动时间
+        calculateTodayStats();
+        
         // 更新统计卡片
-        // index 0: 今日学习时间 (保留原值或显示0)
-        // index 1: 运动户外时间 (保留原值或显示0)
+        // index 0: 今日学习时间
+        // index 1: 运动户外时间
         // index 2: 今日任务数量 - 显示总习惯数
         // index 3: 今日完成率 - 显示完成百分比
         document.querySelectorAll('.stat-value.blue').forEach((el, index) => {
+            if (index === 0) {
+                // 今日学习时间
+                el.textContent = formatTime(todayStudyTime);
+            }
+            if (index === 1) {
+                // 今日运动时间
+                el.textContent = formatTime(todaySportTime);
+            }
             if (index === 2) {
                 // 今日任务数量 = 总习惯数
                 el.textContent = totalHabits;
@@ -451,6 +474,77 @@ async function loadStats() {
     } catch (error) {
         console.error('加载统计数据失败:', error);
     }
+}
+
+// 计算今日学习和运动时间
+function calculateTodayStats() {
+    const today = API.utils.getBeijingDateStr();
+    todayStudyTime = 0;
+    todaySportTime = 0;
+    
+    // 遍历今日打卡记录，根据习惯类型统计时间
+    const todayCheckins = checkins.filter(c => c.checkin_date === today && c.status === 'completed');
+    
+    todayCheckins.forEach(checkin => {
+        const habit = habits.find(h => h.id === checkin.habit_id);
+        if (!habit) return;
+        
+        // 估算每次打卡的时间（默认30分钟，可根据习惯名称智能判断）
+        const estimatedMinutes = estimateHabitTime(habit);
+        
+        // 根据习惯图标或名称判断是学习时间还是运动时间
+        if (isStudyHabit(habit)) {
+            todayStudyTime += estimatedMinutes;
+        } else if (isSportHabit(habit)) {
+            todaySportTime += estimatedMinutes;
+        }
+    });
+}
+
+// 判断是否为学习习惯
+function isStudyHabit(habit) {
+    const studyKeywords = ['学习', '阅读', '作业', '复习', '预习', '背诵', '写字', '练习', 'book', 'edit', 'file'];
+    const name = habit.name || '';
+    const icon = habit.icon || '';
+    
+    return studyKeywords.some(kw => name.includes(kw) || icon.includes(kw));
+}
+
+// 判断是否为运动习惯
+function isSportHabit(habit) {
+    const sportKeywords = ['运动', '跑步', '锻炼', '健身', '户外', '体育', 'activity', 'sun'];
+    const name = habit.name || '';
+    const icon = habit.icon || '';
+    
+    return sportKeywords.some(kw => name.includes(kw) || icon.includes(kw));
+}
+
+// 估算习惯所需时间（分钟）
+function estimateHabitTime(habit) {
+    const name = habit.name || '';
+    
+    // 根据习惯名称智能判断时间
+    if (name.includes('30分钟')) return 30;
+    if (name.includes('1小时') || name.includes('60分钟')) return 60;
+    if (name.includes('45分钟')) return 45;
+    if (name.includes('15分钟')) return 15;
+    if (name.includes('跑步') || name.includes('运动')) return 30;
+    if (name.includes('阅读') || name.includes('晨读')) return 30;
+    if (name.includes('作业')) return 45;
+    
+    // 默认30分钟
+    return 30;
+}
+
+// 格式化时间显示（分钟转为 Xm 或 XhXm）
+function formatTime(minutes) {
+    if (minutes === 0) return '0m';
+    if (minutes < 60) return `${minutes}m`;
+    
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    if (mins === 0) return `${hours}h`;
+    return `${hours}h${mins}m`;
 }
 
 // ============================================
@@ -724,6 +818,9 @@ function initPage() {
     // 初始化搜索
     initSearch();
     
+    // 初始化学习计划
+    loadStudyPlans();
+    
     // 初始化电子宠物
     initPetSystem();
     
@@ -872,6 +969,209 @@ function switchTab(tabName) {
     
     document.querySelector(`.tab-btn[data-tab="${tabName}"]`)?.classList.add('active');
     document.getElementById(`${tabName}Tab`)?.classList.add('active');
+}
+
+// ============================================
+// 学习计划管理
+// ============================================
+
+// 添加学习计划
+function addStudyPlan() {
+    const planName = prompt('请输入学习计划名称：', '例如：数学作业、英语阅读');
+    if (!planName || !planName.trim()) return;
+    
+    const planTime = prompt('预计学习时间（分钟）：', '30');
+    const minutes = parseInt(planTime) || 30;
+    
+    const plan = {
+        id: Date.now(),
+        name: planName.trim(),
+        estimatedTime: minutes,
+        completed: false,
+        completedTime: 0,
+        createdAt: API.utils.getBeijingDateStr()
+    };
+    
+    studyPlans.push(plan);
+    saveStudyPlans();
+    renderStudyPlans();
+    
+    showToast('学习计划添加成功');
+}
+
+// 渲染学习计划列表
+function renderStudyPlans() {
+    const container = document.querySelector('.plan-empty-state')?.parentElement;
+    if (!container) return;
+    
+    const today = API.utils.getBeijingDateStr();
+    const todayPlans = studyPlans.filter(p => p.createdAt === today);
+    
+    if (todayPlans.length === 0) {
+        container.innerHTML = `
+            <div class="plan-header">
+                <div class="plan-title-wrapper">
+                    <div class="title-indicator"></div>
+                    <h3 class="plan-title">我的计划</h3>
+                </div>
+                <button class="btn-share" onclick="addStudyPlan()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    添加计划
+                </button>
+            </div>
+            <div class="plan-empty-state">
+                <div class="book-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#C5C9D0" stroke-width="1.5">
+                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                    </svg>
+                </div>
+                <p style="color: #9CA3AF; margin-top: 12px;">还没有学习计划，点击"添加计划"开始</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // 计算今日学习进度
+    const totalTime = todayPlans.reduce((sum, p) => sum + p.estimatedTime, 0);
+    const completedTime = todayPlans.reduce((sum, p) => sum + (p.completed ? p.estimatedTime : 0), 0);
+    const progress = totalTime > 0 ? Math.round((completedTime / totalTime) * 100) : 0;
+    
+    let html = `
+        <div class="plan-header">
+            <div class="plan-title-wrapper">
+                <div class="title-indicator"></div>
+                <h3 class="plan-title">我的计划</h3>
+            </div>
+            <div style="display: flex; gap: 12px; align-items: center;">
+                <span style="font-size: 13px; color: #6B7280;">今日进度: ${progress}%</span>
+                <button class="btn-share" onclick="addStudyPlan()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    添加计划
+                </button>
+            </div>
+        </div>
+        <div style="background: white; border-radius: 12px; padding: 16px; margin-bottom: 16px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                <span style="font-size: 13px; color: #6B7280;">已完成: ${formatTime(completedTime)}</span>
+                <span style="font-size: 13px; color: #6B7280;">总计: ${formatTime(totalTime)}</span>
+            </div>
+            <div style="background: #E5E7EB; height: 8px; border-radius: 4px; overflow: hidden;">
+                <div style="background: #4A7BF7; height: 100%; width: ${progress}%; transition: width 0.3s;"></div>
+            </div>
+        </div>
+        <div class="study-plan-list">
+    `;
+    
+    todayPlans.forEach(plan => {
+        html += `
+            <div class="study-plan-item" data-id="${plan.id}" style="
+                background: white;
+                border-radius: 12px;
+                padding: 16px;
+                margin-bottom: 12px;
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                border: 2px solid ${plan.completed ? '#22C55E' : '#E5E7EB'};
+            ">
+                <input type="checkbox" 
+                    ${plan.completed ? 'checked' : ''} 
+                    onchange="toggleStudyPlan(${plan.id})"
+                    style="width: 20px; height: 20px; cursor: pointer;">
+                <div style="flex: 1;">
+                    <div style="font-weight: 500; color: ${plan.completed ? '#9CA3AF' : '#1F2937'}; 
+                                text-decoration: ${plan.completed ? 'line-through' : 'none'};">
+                        ${plan.name}
+                    </div>
+                    <div style="font-size: 13px; color: #6B7280; margin-top: 4px;">
+                        预计 ${plan.estimatedTime} 分钟
+                    </div>
+                </div>
+                <button onclick="deleteStudyPlan(${plan.id})" style="
+                    background: none;
+                    border: none;
+                    color: #EF4444;
+                    cursor: pointer;
+                    padding: 4px;
+                ">删除</button>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+// 切换学习计划完成状态
+function toggleStudyPlan(planId) {
+    const plan = studyPlans.find(p => p.id === planId);
+    if (!plan) return;
+    
+    plan.completed = !plan.completed;
+    
+    if (plan.completed) {
+        // 完成计划，增加学习时间
+        todayStudyTime += plan.estimatedTime;
+        showToast(`完成计划！学习时间 +${plan.estimatedTime}分钟`);
+    } else {
+        // 取消完成，减少学习时间
+        todayStudyTime = Math.max(0, todayStudyTime - plan.estimatedTime);
+    }
+    
+    saveStudyPlans();
+    renderStudyPlans();
+    updateStudyTimeDisplay();
+}
+
+// 删除学习计划
+function deleteStudyPlan(planId) {
+    if (!confirm('确定要删除这个学习计划吗？')) return;
+    
+    const plan = studyPlans.find(p => p.id === planId);
+    if (plan && plan.completed) {
+        // 如果已完成，减少学习时间
+        todayStudyTime = Math.max(0, todayStudyTime - plan.estimatedTime);
+    }
+    
+    studyPlans = studyPlans.filter(p => p.id !== planId);
+    saveStudyPlans();
+    renderStudyPlans();
+    updateStudyTimeDisplay();
+    
+    showToast('计划已删除');
+}
+
+// 保存学习计划到本地存储
+function saveStudyPlans() {
+    localStorage.setItem('studyPlans', JSON.stringify(studyPlans));
+}
+
+// 加载学习计划
+function loadStudyPlans() {
+    const saved = localStorage.getItem('studyPlans');
+    if (saved) {
+        studyPlans = JSON.parse(saved);
+        // 只保留今天的计划
+        const today = API.utils.getBeijingDateStr();
+        studyPlans = studyPlans.filter(p => p.createdAt === today);
+    }
+    renderStudyPlans();
+}
+
+// 更新学习时间显示
+function updateStudyTimeDisplay() {
+    document.querySelectorAll('.stat-value.blue').forEach((el, index) => {
+        if (index === 0) {
+            el.textContent = formatTime(todayStudyTime);
+        }
+    });
 }
 
 // 日历相关
