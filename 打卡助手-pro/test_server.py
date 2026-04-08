@@ -66,10 +66,10 @@ MOCK_CHECKINS = []
 MOCK_LOGS = []
 MOCK_LOGIN_LOGS = []
 
-# 生成模拟打卡记录
-for i in range(30):
-    date = (datetime.now() - timedelta(days=i)).strftime('%Y-%m-%d')
-    for habit_id in [1, 2, 3]:
+# 生成模拟打卡记录（只生成历史数据，不包含今天）
+for i in range(1, 8):  # 过去7天
+    date = (get_beijing_time() - timedelta(days=i)).strftime('%Y-%m-%d')
+    for habit_id in [1, 2]:
         MOCK_CHECKINS.append({
             "id": len(MOCK_CHECKINS) + 1,
             "habit_id": habit_id,

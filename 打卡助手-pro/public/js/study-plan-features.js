@@ -218,6 +218,11 @@ function savePlanForm() {
     renderStudyPlans();
     closeAddPlanModal();
     
+    // 刷新统计数据
+    if (typeof loadStats === 'function') {
+        loadStats();
+    }
+    
     showToast('学习计划添加成功');
 }
 
@@ -397,6 +402,12 @@ function saveBatchPlans() {
         saveStudyPlans();
         renderStudyPlans();
         closeBatchAddModal();
+        
+        // 刷新统计数据
+        if (typeof loadStats === 'function') {
+            loadStats();
+        }
+        
         showToast(`成功添加 ${addedCount} 个学习计划`);
     } else {
         showToast('没有有效的计划内容', 'error');
@@ -728,6 +739,12 @@ function applyAIPlans() {
         saveStudyPlans();
         renderStudyPlans();
         closeAICreateModal();
+        
+        // 刷新统计数据
+        if (typeof loadStats === 'function') {
+            loadStats();
+        }
+        
         showToast(`成功添加 ${addedCount} 个AI生成的学习计划`);
     }
 }

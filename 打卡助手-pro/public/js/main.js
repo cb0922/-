@@ -247,13 +247,25 @@ async function checkinHabit(habitId) {
         const points = response.data.points_earned || 0;
         showToast(`打卡成功！+${points}⭐`);
         
-        // 刷新打卡记录
-        await loadCheckins();
+        // 立即更新本地打卡记录（用于实时统计）
+        const habit = habits.find(h => h.id === habitId);
+        if (habit) {
+            checkins.push({
+                id: Date.now(),
+                habit_id: habitId,
+                checkin_date: API.utils.getBeijingDateStr(),
+                status: 'completed',
+                points_earned: points
+            });
+        }
         
-        // 刷新用户数据
+        // 刷新数据
+        await loadCheckins();
         await loadUserInfo();
-        await loadStats();
         await loadHabits();
+        
+        // 关键：刷新统计数据
+        await loadStats();
         
         // 更新日历显示
         updateHabitCalendar();
@@ -424,34 +436,36 @@ function closeMakeupHabitDialog() {
 }
 
 // ============================================
-// 统计数据
+// 统计数据 - 实时计算
 // ============================================
 async function loadStats() {
     try {
-        // 获取今日打卡统计
         const today = API.utils.getBeijingDateStr();
         
-        // 获取所有习惯数量（今日任务数）
+        // 1. 计算习惯相关数据
         const totalHabits = habits.length;
-        
-        // 获取今日已完成的打卡数量
         const completedHabits = checkins.filter(c => 
             c.checkin_date === today && c.status === 'completed'
         ).length;
         
-        // 计算完成率
-        const completionRate = totalHabits > 0 
-            ? Math.round((completedHabits / totalHabits) * 100) 
+        // 2. 计算学习计划相关数据
+        const todayPlans = studyPlans.filter(p => p.createdAt === today);
+        const totalPlans = todayPlans.length;
+        const completedPlans = todayPlans.filter(p => p.completed).length;
+        
+        // 3. 总任务数 = 习惯数 + 学习计划数
+        const totalTasks = totalHabits + totalPlans;
+        const completedTasks = completedHabits + completedPlans;
+        
+        // 4. 计算完成率
+        const completionRate = totalTasks > 0 
+            ? Math.round((completedTasks / totalTasks) * 100) 
             : 0;
         
-        // 计算今日学习时间和运动时间
+        // 5. 计算今日学习时间和运动时间
         calculateTodayStats();
         
-        // 更新统计卡片
-        // index 0: 今日学习时间
-        // index 1: 运动户外时间
-        // index 2: 今日任务数量 - 显示总习惯数
-        // index 3: 今日完成率 - 显示完成百分比
+        // 6. 更新统计卡片
         document.querySelectorAll('.stat-value.blue').forEach((el, index) => {
             if (index === 0) {
                 // 今日学习时间
@@ -462,17 +476,29 @@ async function loadStats() {
                 el.textContent = formatTime(todaySportTime);
             }
             if (index === 2) {
-                // 今日任务数量 = 总习惯数
-                el.textContent = totalHabits;
+                // 今日任务数量 = 习惯数 + 计划数
+                el.textContent = totalTasks;
             }
             if (index === 3) {
-                // 今日完成率 = 已完成数 / 总习惯数
+                // 今日完成率
                 el.textContent = completionRate + '%';
             }
         });
         
+        // 7. 更新副标题统计
+        updateHeaderStats(completedTasks, totalPlans);
+        
     } catch (error) {
         console.error('加载统计数据失败:', error);
+    }
+}
+
+// 更新头部统计信息
+function updateHeaderStats(completedHabits, completedPlans) {
+    const statsText = document.querySelector('.user-stats');
+    if (statsText) {
+        const continuousDays = currentUser?.continuous_days || 0;
+        statsText.innerHTML = `你已连续打卡 <span class="highlight">${continuousDays}</span> 天，已累计完成 <span class="highlight">${completedHabits}</span> 个习惯、<span class="highlight">${completedPlans}</span> 个学习计划`;
     }
 }
 
@@ -1128,6 +1154,9 @@ function toggleStudyPlan(planId) {
     saveStudyPlans();
     renderStudyPlans();
     updateStudyTimeDisplay();
+    
+    // 关键：刷新统计数据（任务数量和完成率）
+    loadStats();
 }
 
 // 删除学习计划
@@ -1144,6 +1173,9 @@ function deleteStudyPlan(planId) {
     saveStudyPlans();
     renderStudyPlans();
     updateStudyTimeDisplay();
+    
+    // 关键：刷新统计数据
+    loadStats();
     
     showToast('计划已删除');
 }
