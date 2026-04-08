@@ -224,7 +224,7 @@
                     <!-- 学习计划头部操作区 -->
                     <div class="study-header">
                         <div class="action-buttons">
-                            <button class="btn btn-ai">
+                            <button class="btn btn-ai" onclick="showAICreateModal()">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
                                     <path d="M2 17l10 5 10-5"></path>
@@ -232,7 +232,7 @@
                                 </svg>
                                 AI创建
                             </button>
-                            <button class="btn btn-batch">
+                            <button class="btn btn-batch" onclick="showBatchAddModal()">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <line x1="8" y1="6" x2="21" y2="6"></line>
                                     <line x1="8" y1="12" x2="21" y2="12"></line>
@@ -1886,5 +1886,6 @@
 
     <script src="/js/api.js"></script>
     <script src="/js/main.js"></script>
+    <script src="/js/study-plan-features.js"></script>
 </body>
 </html>
