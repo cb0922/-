@@ -127,6 +127,9 @@ async function loadHabits() {
         // 更新习惯列表UI
         renderHabitList();
         
+        // 更新统计数据（今日任务数量依赖习惯数）
+        await loadStats();
+        
     } catch (error) {
         console.error('加载习惯列表失败:', error);
     }
@@ -413,17 +416,35 @@ function closeMakeupHabitDialog() {
 // ============================================
 async function loadStats() {
     try {
-        const response = await API.checkins.getStats();
-        const stats = response.data;
+        // 获取今日打卡统计
+        const today = API.utils.getBeijingDateStr();
+        
+        // 获取所有习惯数量（今日任务数）
+        const totalHabits = habits.length;
+        
+        // 获取今日已完成的打卡数量
+        const completedHabits = checkins.filter(c => 
+            c.checkin_date === today && c.status === 'completed'
+        ).length;
+        
+        // 计算完成率
+        const completionRate = totalHabits > 0 
+            ? Math.round((completedHabits / totalHabits) * 100) 
+            : 0;
         
         // 更新统计卡片
+        // index 0: 今日学习时间 (保留原值或显示0)
+        // index 1: 运动户外时间 (保留原值或显示0)
+        // index 2: 今日任务数量 - 显示总习惯数
+        // index 3: 今日完成率 - 显示完成百分比
         document.querySelectorAll('.stat-value.blue').forEach((el, index) => {
-            if (index === 2) el.textContent = stats.today.habits_completed || 0;
+            if (index === 2) {
+                // 今日任务数量 = 总习惯数
+                el.textContent = totalHabits;
+            }
             if (index === 3) {
-                const rate = stats.today.habits_completed > 0 
-                    ? Math.round((stats.today.habits_completed / habits.length) * 100) 
-                    : 0;
-                el.textContent = rate + '%';
+                // 今日完成率 = 已完成数 / 总习惯数
+                el.textContent = completionRate + '%';
             }
         });
         
