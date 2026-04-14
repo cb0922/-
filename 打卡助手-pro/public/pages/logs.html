@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>日志查询 - 小打卡 Pro</title>
+    <title>日志查询 - 松鼠打卡</title>
+    <link rel="stylesheet" href="/css/styles.css">
     <style>
         * {
             margin: 0;
@@ -335,74 +336,174 @@
     </style>
 </head>
 <body>
-    <header class="header">
-        <div class="header-content">
-            <div class="header-left">
-                <button class="back-btn" onclick="window.location.href='/'">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="15 18 9 12 15 6"></polyline>
+    <!-- 左侧导航栏 -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 32px; height: 32px;">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                    <path d="M2 17l10 5 10-5"></path>
+                    <path d="M2 12l10 5 10-5"></path>
+                </svg>
+                <span>松鼠打卡</span>
+            </div>
+        </div>
+        
+        <nav class="sidebar-nav">
+            <div class="nav-section">
+                <div class="nav-section-title">主要功能</div>
+                <div class="nav-item" data-page="dashboard" onclick="navigateTo('dashboard')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px;">
+                        <rect x="3" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="14" width="7" height="7"></rect>
+                        <rect x="3" y="14" width="7" height="7"></rect>
                     </svg>
-                </button>
-                <h1 class="header-title">日志查询</h1>
-            </div>
-        </div>
-    </header>
-
-    <main class="content">
-        <!-- 标签页 -->
-        <div class="tabs">
-            <button class="tab active" onclick="switchTab('system')">系统日志</button>
-            <button class="tab" onclick="switchTab('login')">登录日志</button>
-        </div>
-
-        <!-- 筛选区 -->
-        <div class="filter-bar">
-            <div class="filter-group">
-                <span class="filter-label">操作类型:</span>
-                <select class="filter-select" id="actionFilter">
-                    <option value="">全部</option>
-                    <option value="create_habit">创建习惯</option>
-                    <option value="update_habit">更新习惯</option>
-                    <option value="delete_habit">删除习惯</option>
-                    <option value="checkin">打卡</option>
-                    <option value="login">登录</option>
-                </select>
-            </div>
-            <div class="filter-group">
-                <span class="filter-label">开始日期:</span>
-                <input type="date" class="filter-input" id="startDate">
-            </div>
-            <div class="filter-group">
-                <span class="filter-label">结束日期:</span>
-                <input type="date" class="filter-input" id="endDate">
-            </div>
-            <div class="filter-group" style="margin-left: auto;">
-                <button class="btn btn-primary" onclick="loadLogs()">查询</button>
-                <button class="btn btn-secondary" onclick="resetFilter()">重置</button>
-            </div>
-        </div>
-
-        <!-- 日志列表 -->
-        <div class="log-list" id="logList">
-            <div class="log-header">
-                <span>时间</span>
-                <span>类型</span>
-                <span>用户</span>
-                <span>内容</span>
-                <span>IP地址</span>
-            </div>
-            <div id="logContent">
-                <div class="loading">
-                    <div class="loading-spinner"></div>
+                    <span>首页概览</span>
+                </div>
+                <div class="nav-item" data-page="study" onclick="navigateTo('study')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px;">
+                        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                    </svg>
+                    <span>学习计划</span>
+                </div>
+                <div class="nav-item" data-page="habit" onclick="navigateTo('habit')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px;">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                    <span>行为习惯</span>
+                </div>
+                <div class="nav-item" data-page="stats" onclick="navigateTo('stats')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px;">
+                        <line x1="18" y1="20" x2="18" y2="10"></line>
+                        <line x1="12" y1="20" x2="12" y2="4"></line>
+                        <line x1="6" y1="20" x2="6" y2="14"></line>
+                    </svg>
+                    <span>数据统计</span>
                 </div>
             </div>
+            
+            <div class="nav-section">
+                <div class="nav-section-title">更多功能</div>
+                <div class="nav-item" data-page="pet" onclick="navigateTo('pet')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px;">
+                        <path d="M12 2c.5 0 1 .2 1.4.6.4.4.6.9.6 1.4 0 .5-.2 1-.6 1.4-.4.4-.9.6-1.4.6-.5 0-1-.2-1.4-.6-.4-.4-.6-.9-.6-1.4 0-.5.2-1 .6-1.4.4-.4.9-.6 1.4-.6z"></path>
+                        <path d="M8 9c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v9c0 1.1-.9 2-2 2h-4c-1.1 0-2-.9-2-2V9z"></path>
+                        <path d="M4 14c0-1.1.9-2 2-2"></path>
+                        <path d="M20 14c0-1.1-.9-2-2-2"></path>
+                    </svg>
+                    <span>电子宠物</span>
+                </div>
+                <div class="nav-item active" data-page="logs" onclick="navigateTo('logs')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px;">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                    </svg>
+                    <span>使用日志</span>
+                </div>
+                <div class="nav-item" data-page="help" onclick="navigateTo('help')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px;">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                    </svg>
+                    <span>使用帮助</span>
+                </div>
+            </div>
+        </nav>
+        
+        <div class="sidebar-footer">
+            <div class="user-menu-mini" onclick="toggleUserMenu()">
+                <div class="user-avatar-mini">用</div>
+                <div class="user-info-mini">
+                    <div class="user-name-mini">测试用户</div>
+                    <div class="user-role-mini">普通用户</div>
+                </div>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+            </div>
         </div>
+    </aside>
 
-        <!-- 分页 -->
-        <div class="pagination" id="pagination">
-            <!-- 动态生成分页 -->
-        </div>
-    </main>
+    <!-- 主内容区域 -->
+    <div class="main-wrapper">
+        <header class="header">
+            <div class="header-content">
+                <div class="header-left">
+                    <button class="back-btn" onclick="window.location.href='/'">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="15 18 9 12 15 6"></polyline>
+                        </svg>
+                    </button>
+                    <h1 class="header-title">日志查询</h1>
+                </div>
+            </div>
+        </header>
+
+        <main class="content">
+            <!-- 标签页 -->
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('system')">系统日志</button>
+                <button class="tab" onclick="switchTab('login')">登录日志</button>
+            </div>
+
+            <!-- 筛选区 -->
+            <div class="filter-bar">
+                <div class="filter-group">
+                    <span class="filter-label">操作类型:</span>
+                    <select class="filter-select" id="actionFilter">
+                        <option value="">全部</option>
+                        <option value="create_habit">创建习惯</option>
+                        <option value="update_habit">更新习惯</option>
+                        <option value="delete_habit">删除习惯</option>
+                        <option value="checkin">打卡</option>
+                        <option value="login">登录</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <span class="filter-label">开始日期:</span>
+                    <input type="date" class="filter-input" id="startDate">
+                </div>
+                <div class="filter-group">
+                    <span class="filter-label">结束日期:</span>
+                    <input type="date" class="filter-input" id="endDate">
+                </div>
+                <div class="filter-group" style="margin-left: auto;">
+                    <button class="btn btn-primary" onclick="loadLogs()">查询</button>
+                    <button class="btn btn-secondary" onclick="resetFilter()">重置</button>
+                </div>
+            </div>
+
+            <!-- 日志列表 -->
+            <div class="log-list" id="logList">
+                <div class="log-header">
+                    <span>时间</span>
+                    <span>类型</span>
+                    <span>用户</span>
+                    <span>内容</span>
+                    <span>IP地址</span>
+                </div>
+                <div id="logContent">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 分页 -->
+            <div class="pagination" id="pagination">
+                <!-- 动态生成分页 -->
+            </div>
+        </main>
+    </div>
 
     <script src="/js/api.js"></script>
     <script>
@@ -414,6 +515,34 @@
         let currentTab = 'system';
         let currentPage = 1;
         let totalPages = 1;
+
+        // 侧边栏导航功能
+        function navigateTo(page) {
+            // 页面跳转逻辑
+            switch(page) {
+                case 'dashboard':
+                    window.location.href = '/';
+                    break;
+                case 'study':
+                    window.location.href = '/';
+                    break;
+                case 'habit':
+                    window.location.href = '/';
+                    break;
+                case 'stats':
+                    window.location.href = '/pages/dashboard.html';
+                    break;
+                case 'pet':
+                    window.location.href = '/#pet';
+                    break;
+                case 'logs':
+                    // 当前页面，不需要跳转
+                    break;
+                case 'help':
+                    window.location.href = '/';
+                    break;
+            }
+        }
 
         // 切换标签
         function switchTab(tab) {
@@ -569,6 +698,12 @@
             document.getElementById('endDate').value = '';
             currentPage = 1;
             loadLogs();
+        }
+
+        // 用户菜单切换（placeholder function)
+        function toggleUserMenu() {
+            // 用户菜单功能可以在这里实现
+            console.log('Toggle user menu');
         }
 
         // 页面加载时加载日志

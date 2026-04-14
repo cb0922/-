@@ -4,6 +4,7 @@ const { authMiddleware } = require('../middleware/auth');
 const { operationLogger } = require('../middleware/logger');
 const response = require('../utils/response');
 const { asyncHandler } = require('../middleware/error');
+const { checkAndUnlockAchievement } = require('../routes/points');
 
 const router = express.Router();
 
@@ -117,6 +118,12 @@ router.post('/', authMiddleware, operationLogger('checkin', 'checkin'), asyncHan
     // 更新连续打卡天数
     await updateContinuousDays(req.user.id);
 
+    // 检查成就
+    await checkAndUnlockAchievement(req.user.id, 'checkin_count');
+    await checkAndUnlockAchievement(req.user.id, 'all_round');
+    await checkAndUnlockAchievement(req.user.id, 'continuous_days');
+    await checkAndUnlockAchievement(req.user.id, 'total_earned_points');
+
     const checkin = await dbGet('SELECT * FROM checkins WHERE id = ?', [result.id]);
 
     response.success(res, {
@@ -181,6 +188,12 @@ router.post('/makeup', authMiddleware, operationLogger('makeup_checkin', 'checki
          VALUES (?, ?, 'earn', 'makeup', ?, ?)`,
         [req.user.id, habit.points, result.id, `补打卡：${habit.name}`]
     );
+
+    // 检查成就
+    await checkAndUnlockAchievement(req.user.id, 'checkin_count');
+    await checkAndUnlockAchievement(req.user.id, 'all_round');
+    await checkAndUnlockAchievement(req.user.id, 'continuous_days');
+    await checkAndUnlockAchievement(req.user.id, 'total_earned_points');
 
     const checkin = await dbGet('SELECT * FROM checkins WHERE id = ?', [result.id]);
 

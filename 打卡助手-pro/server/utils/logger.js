@@ -30,7 +30,7 @@ const consoleFormat = winston.format.combine(
 const logger = winston.createLogger({
     level: process.env.LOG_LEVEL || 'info',
     format: logFormat,
-    defaultMeta: { service: '打卡助手-pro' },
+    defaultMeta: { service: '松鼠打卡' },
     transports: [
         // 错误日志
         new DailyRotateFile({

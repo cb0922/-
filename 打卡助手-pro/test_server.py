@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-打卡助手 Pro - 测试服务器
+松鼠打卡 - 测试服务器
 用于前端功能测试的简单HTTP服务器，模拟后端API
 """
 
@@ -12,6 +12,8 @@ import re
 from datetime import datetime, timedelta
 import time
 from urllib.parse import urlparse, parse_qs
+import urllib.request
+import ssl
 
 PORT = 3000
 PUBLIC_DIR = os.path.join(os.path.dirname(__file__), 'public')
@@ -40,6 +42,8 @@ def get_beijing_iso_str():
     return get_beijing_time().isoformat()
 
 # 模拟数据
+MOCK_USER_POINTS = 150
+
 MOCK_USER = {
     "id": 1,
     "username": "testuser",
@@ -48,7 +52,7 @@ MOCK_USER = {
     "phone": "13800138000",
     "avatar": None,
     "role": "user",
-    "total_points": 150,
+    "total_points": MOCK_USER_POINTS,
     "continuous_days": 7,
     "total_checkins": 45,
     "created_at": "2024-01-01T00:00:00",
@@ -56,10 +60,123 @@ MOCK_USER = {
 }
 
 MOCK_HABITS = [
-    {"id": 1, "name": "早起", "icon": "sun", "color": "#F59E0B", "habit_type": "daily_once", "points": 2, "description": "早睡早起身体好", "status": "active", "created_at": "2024-01-01T00:00:00"},
-    {"id": 2, "name": "晨读", "icon": "book", "color": "#4A7BF7", "habit_type": "daily_once", "points": 3, "description": "每天阅读30分钟", "status": "active", "created_at": "2024-01-01T00:00:00"},
-    {"id": 3, "name": "运动", "icon": "activity", "color": "#22C55E", "habit_type": "daily_once", "points": 2, "description": "坚持锻炼", "status": "active", "created_at": "2024-01-01T00:00:00"},
-    {"id": 4, "name": "背单词", "icon": "pen-tool", "color": "#8B5CF6", "habit_type": "daily_once", "points": 1, "description": "记忆新单词", "status": "active", "created_at": "2024-01-01T00:00:00"}
+    # 学习习惯 (1-12)
+    {"id": 1, "name": "认真完成各科作业", "icon": "book", "color": "#22C55E", "habit_type": "daily_once", "points": 2, "description": "按时认真完成各科作业", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    {"id": 2, "name": "复习今日所学内容", "icon": "book", "color": "#3B82F6", "habit_type": "daily_once", "points": 2, "description": "当天复习学习的内容", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    {"id": 3, "name": "预习明日要学课程", "icon": "calendar", "color": "#8B5CF6", "habit_type": "daily_once", "points": 3, "description": "提前预习第二天的课程", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    {"id": 4, "name": "每日练字15分钟", "icon": "edit", "color": "#F97316", "habit_type": "daily_once", "points": 2, "description": "练习书法15分钟", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    {"id": 5, "name": "坐姿、握笔姿势标准", "icon": "user", "color": "#22C55E", "habit_type": "daily_once", "points": 2, "description": "保持正确的坐姿和握笔姿势", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    {"id": 6, "name": "课外书阅读30分钟", "icon": "book", "color": "#A855F7", "habit_type": "daily_once", "points": 5, "description": "每天阅读课外书30分钟", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    {"id": 7, "name": "学习不无故离开座位", "icon": "target", "color": "#3B82F6", "habit_type": "daily_once", "points": 5, "description": "学习时专注不走动", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    {"id": 8, "name": "阅读理解1篇", "icon": "file", "color": "#3B82F6", "habit_type": "daily_once", "points": 3, "description": "完成阅读理解练习1篇", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    {"id": 9, "name": "看图写话1篇", "icon": "edit", "color": "#A855F7", "habit_type": "daily_once", "points": 5, "description": "完成看图写话练习1篇", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    {"id": 10, "name": "摘抄好词好句30个", "icon": "edit", "color": "#F97316", "habit_type": "daily_once", "points": 3, "description": "摘抄好词好句30个", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    {"id": 11, "name": "口算题50道", "icon": "activity", "color": "#22C55E", "habit_type": "daily_multi", "points": 2, "description": "完成口算题50道", "status": "active", "created_at": "2024-01-01T00:00:00", "max_checkins": 3},
+    {"id": 12, "name": "听力1篇", "icon": "headphones", "color": "#3B82F6", "habit_type": "daily_once", "points": 5, "description": "完成听力练习1篇", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    
+    # 生活习惯 (13-24)
+    {"id": 13, "name": "主动洗澡", "icon": "droplet", "color": "#3B82F6", "habit_type": "daily_once", "points": 2, "description": "主动洗澡保持卫生", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    {"id": 14, "name": "整理书包、课桌", "icon": "box", "color": "#F97316", "habit_type": "daily_multi", "points": 1, "description": "保持书包和课桌整洁", "status": "active", "created_at": "2024-01-01T00:00:00", "max_checkins": 2},
+    {"id": 15, "name": "吃饭认真、不挑食", "icon": "heart", "color": "#22C55E", "habit_type": "daily_once", "points": 1, "description": "好好吃饭，不挑食", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    {"id": 16, "name": "吃饭不超过20分钟", "icon": "clock", "color": "#3B82F6", "habit_type": "daily_once", "points": 1, "description": "在20分钟内吃完饭", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    {"id": 17, "name": "按时睡觉、起床", "icon": "moon", "color": "#A855F7", "habit_type": "daily_once", "points": 2, "description": "按时作息不拖延", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    {"id": 18, "name": "主动做家务", "icon": "home", "color": "#EC4899", "habit_type": "daily_multi", "points": 2, "description": "主动帮忙做家务", "status": "active", "created_at": "2024-01-01T00:00:00", "max_checkins": 3},
+    {"id": 19, "name": "照顾弟弟妹妹", "icon": "heart", "color": "#EC4899", "habit_type": "daily_once", "points": 2, "description": "照顾和陪伴弟弟妹妹", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    {"id": 20, "name": "每日运动30分钟", "icon": "activity", "color": "#22C55E", "habit_type": "daily_once", "points": 3, "description": "每天运动锻炼30分钟", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    {"id": 21, "name": "作业本整齐", "icon": "check", "color": "#22C55E", "habit_type": "daily_once", "points": 2, "description": "作业本书写整齐", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    {"id": 22, "name": "默写满分", "icon": "star", "color": "#F97316", "habit_type": "daily_once", "points": 5, "description": "默写测试得满分", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    {"id": 23, "name": "考试95分以上", "icon": "trophy", "color": "#F97316", "habit_type": "daily_once", "points": 5, "description": "考试成绩95分以上", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    {"id": 24, "name": "获得学校的奖状", "icon": "star", "color": "#F59E0B", "habit_type": "daily_once", "points": 10, "description": "获得学校颁发的奖状", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    
+    # 品德习惯 (25-30)
+    {"id": 25, "name": "一天不发脾气", "icon": "smile", "color": "#EC4899", "habit_type": "daily_once", "points": 3, "description": "全天保持好情绪", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    {"id": 26, "name": "尊敬长辈、不顶嘴", "icon": "heart", "color": "#EC4899", "habit_type": "daily_once", "points": 3, "description": "尊敬长辈，听话不顶嘴", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    {"id": 27, "name": "主动和认识的人打招呼", "icon": "user", "color": "#3B82F6", "habit_type": "daily_multi", "points": 2, "description": "见到认识的人主动打招呼", "status": "active", "created_at": "2024-01-01T00:00:00", "max_checkins": 5},
+    {"id": 28, "name": "公共场合不大声喧哗", "icon": "volume", "color": "#A855F7", "habit_type": "daily_once", "points": 2, "description": "在公共场合保持安静", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    {"id": 29, "name": "遇到难题想办法解决", "icon": "lightbulb", "color": "#F97316", "habit_type": "daily_once", "points": 5, "description": "遇到困难主动思考解决", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    {"id": 30, "name": "遇到问题不哭", "icon": "shield", "color": "#3B82F6", "habit_type": "daily_once", "points": 5, "description": "遇到问题不哭不闹", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    
+    # ========== 加分习惯 (31-60) ==========
+    # 健康习惯
+    {"id": 31, "name": "喝水8杯", "icon": "droplet", "color": "#3B82F6", "habit_type": "daily_multi", "points": 1, "description": "每天喝8杯水，保持水分充足", "status": "active", "created_at": "2024-01-01T00:00:00", "max_checkins": 8},
+    {"id": 32, "name": "冥想10分钟", "icon": "moon", "color": "#8B5CF6", "habit_type": "daily_once", "points": 3, "description": "每天冥想10分钟，放松身心", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    {"id": 33, "name": "吃水果", "icon": "heart", "color": "#EF4444", "habit_type": "daily_once", "points": 1, "description": "每天吃一份新鲜水果", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    {"id": 34, "name": "眼保健操", "icon": "activity", "color": "#10B981", "habit_type": "daily_multi", "points": 1, "description": "每天做眼保健操保护视力", "status": "active", "created_at": "2024-01-01T00:00:00", "max_checkins": 3},
+    {"id": 35, "name": "深呼吸练习", "icon": "activity", "color": "#06B6D4", "habit_type": "daily_once", "points": 2, "description": "深呼吸放松练习5分钟", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    
+    # 学习与成长
+    {"id": 36, "name": "背单词20个", "icon": "book", "color": "#6366F1", "habit_type": "daily_once", "points": 3, "description": "每天背诵20个新单词", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    {"id": 37, "name": "英语听力", "icon": "volume", "color": "#F59E0B", "habit_type": "daily_once", "points": 5, "description": "每天练习英语听力15分钟", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    {"id": 38, "name": "写代码练习", "icon": "box", "color": "#14B8A6", "habit_type": "daily_once", "points": 5, "description": "每天编程练习1小时", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    {"id": 39, "name": "听知识播客", "icon": "headphones", "color": "#EC4899", "habit_type": "daily_once", "points": 2, "description": "每天听一期知识类播客", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    {"id": 40, "name": "写日记100字", "icon": "edit", "color": "#64748B", "habit_type": "daily_once", "points": 2, "description": "每天写100字日记", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    {"id": 41, "name": "学新技能", "icon": "lightbulb", "color": "#F97316", "habit_type": "daily_once", "points": 5, "description": "每天学习一项新技能", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    {"id": 42, "name": "看TED演讲", "icon": "volume", "color": "#EF4444", "habit_type": "daily_once", "points": 3, "description": "每天看一个TED演讲", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    
+    # 工作效率
+    {"id": 43, "name": "整理桌面", "icon": "home", "color": "#06B6D4", "habit_type": "daily_once", "points": 1, "description": "每天整理工作桌面", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    {"id": 44, "name": "番茄工作法", "icon": "clock", "color": "#EF4444", "habit_type": "daily_multi", "points": 2, "description": "完成番茄工作周期", "status": "active", "created_at": "2024-01-01T00:00:00", "max_checkins": 4},
+    {"id": 45, "name": "复盘总结", "icon": "target", "color": "#8B5CF6", "habit_type": "daily_once", "points": 3, "description": "每天复盘当日工作与学习", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    {"id": 46, "name": "制定明日计划", "icon": "calendar", "color": "#3B82F6", "habit_type": "daily_once", "points": 2, "description": "每天制定明日计划", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    {"id": 47, "name": "阅读技术文章", "icon": "file", "color": "#14B8A6", "habit_type": "daily_once", "points": 2, "description": "每天阅读一篇技术文章", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    {"id": 48, "name": "记录灵感", "icon": "bookmark", "color": "#F59E0B", "habit_type": "daily_multi", "points": 1, "description": "随时记录灵感和想法", "status": "active", "created_at": "2024-01-01T00:00:00", "max_checkins": 5},
+    
+    # 社交与沟通
+    {"id": 49, "name": "联系朋友", "icon": "user", "color": "#EC4899", "habit_type": "daily_once", "points": 2, "description": "主动联系一位朋友", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    {"id": 50, "name": "赞美他人", "icon": "heart", "color": "#F472B6", "habit_type": "daily_multi", "points": 1, "description": "真诚地赞美身边的人", "status": "active", "created_at": "2024-01-01T00:00:00", "max_checkins": 3},
+    {"id": 51, "name": "分享知识", "icon": "lightbulb", "color": "#FBBF24", "habit_type": "daily_once", "points": 3, "description": "向他人分享一个知识点", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    {"id": 52, "name": "保持微笑", "icon": "smile", "color": "#F59E0B", "habit_type": "daily_once", "points": 1, "description": "全天保持微笑，积极面对", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    {"id": 53, "name": "倾听他人", "icon": "headphones", "color": "#6366F1", "habit_type": "daily_once", "points": 2, "description": "认真倾听他人说话", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    
+    # 生活习惯
+    {"id": 54, "name": "整理衣物", "icon": "home", "color": "#10B981", "habit_type": "daily_once", "points": 1, "description": "每天整理衣物和床铺", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    {"id": 55, "name": "垃圾分类", "icon": "box", "color": "#22C55E", "habit_type": "daily_once", "points": 1, "description": "认真做好垃圾分类", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    {"id": 56, "name": "节约用水", "icon": "droplet", "color": "#3B82F6", "habit_type": "daily_once", "points": 1, "description": "注意节约用水", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    {"id": 57, "name": "断舍离", "icon": "shield", "color": "#64748B", "habit_type": "daily_once", "points": 2, "description": "每天丢弃一件不需要的物品", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    {"id": 58, "name": "记账", "icon": "edit", "color": "#F97316", "habit_type": "daily_once", "points": 2, "description": "记录每日收支情况", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    {"id": 59, "name": "不刷短视频", "icon": "shield", "color": "#EF4444", "habit_type": "daily_once", "points": 5, "description": "今天不刷短视频，专注生活", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    {"id": 60, "name": "不抱怨", "icon": "smile", "color": "#10B981", "habit_type": "daily_once", "points": 3, "description": "一整天不抱怨，保持积极", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    
+    # ========== 减分习惯 (61-90) ==========
+    # 学习不良习惯
+    {"id": 61, "name": "不认真完成各科作业", "icon": "alert-circle", "color": "#EF4444", "habit_type": "daily_once", "points": -5, "description": "作业马虎、不认真", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    {"id": 62, "name": "没有复习今日所学", "icon": "x-circle", "color": "#DC2626", "habit_type": "daily_once", "points": -1, "description": "没有复习当天学习内容", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    {"id": 63, "name": "没有预习明日课程", "icon": "x-circle", "color": "#DC2626", "habit_type": "daily_once", "points": -2, "description": "没有预习第二天课程", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    {"id": 64, "name": "没有进行每日练字", "icon": "x-circle", "color": "#DC2626", "habit_type": "daily_once", "points": -1, "description": "没有完成每日练字任务", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    {"id": 65, "name": "坐姿、握笔不标准", "icon": "alert-triangle", "color": "#F97316", "habit_type": "daily_once", "points": -1, "description": "坐姿或握笔姿势不正确", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    {"id": 66, "name": "没有进行课外书阅读", "icon": "x-circle", "color": "#DC2626", "habit_type": "daily_once", "points": -2, "description": "没有完成课外阅读", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    {"id": 67, "name": "做作业好动、不认真", "icon": "alert-circle", "color": "#EF4444", "habit_type": "daily_once", "points": -5, "description": "做作业时好动、分心", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    
+    # 生活不良习惯
+    {"id": 68, "name": "不主动洗澡", "icon": "x-circle", "color": "#DC2626", "habit_type": "daily_once", "points": -2, "description": "不主动洗澡，需要催促", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    {"id": 69, "name": "不主动整理书包、课桌", "icon": "x-square", "color": "#DC2626", "habit_type": "daily_multi", "points": -1, "description": "书包课桌凌乱不整理", "status": "active", "created_at": "2024-01-01T00:00:00", "max_checkins": 2},
+    {"id": 70, "name": "吃饭不认真、挑食", "icon": "alert-circle", "color": "#F97316", "habit_type": "daily_once", "points": -2, "description": "吃饭挑食、不认真", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    {"id": 71, "name": "吃饭超过30分钟", "icon": "clock", "color": "#F97316", "habit_type": "daily_once", "points": -1, "description": "吃饭时间超过30分钟", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    {"id": 72, "name": "睡觉、起床拖拉磨蹭", "icon": "alert-triangle", "color": "#F59E0B", "habit_type": "daily_once", "points": -1, "description": "睡觉起床拖延磨蹭", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    {"id": 73, "name": "乱扔东西、垃圾", "icon": "trash-2", "color": "#EF4444", "habit_type": "daily_multi", "points": -3, "description": "随意乱扔东西和垃圾", "status": "active", "created_at": "2024-01-01T00:00:00", "max_checkins": 5},
+    {"id": 74, "name": "不尊老爱幼", "icon": "alert-circle", "color": "#EF4444", "habit_type": "daily_once", "points": -3, "description": "不尊敬老人、不爱护幼小", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    
+    # 成绩与表现
+    {"id": 75, "name": "没完成运动任务", "icon": "x-circle", "color": "#DC2626", "habit_type": "daily_once", "points": -3, "description": "没有完成每日运动任务", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    {"id": 76, "name": "单元测试85分以下", "icon": "alert-triangle", "color": "#F97316", "habit_type": "daily_once", "points": -3, "description": "单元测试成绩85分以下", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    {"id": 77, "name": "单元测试70分以下", "icon": "alert-circle", "color": "#EF4444", "habit_type": "daily_once", "points": -5, "description": "单元测试成绩70分以下", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    {"id": 78, "name": "单元测试不及格", "icon": "x-octagon", "color": "#B91C1C", "habit_type": "daily_once", "points": -10, "description": "单元测试成绩不及格", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    {"id": 79, "name": "被老师批评", "icon": "alert-circle", "color": "#B91C1C", "habit_type": "daily_once", "points": -10, "description": "在学校被老师批评", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    {"id": 80, "name": "老师找家长", "icon": "phone-missed", "color": "#7F1D1D", "habit_type": "daily_once", "points": -15, "description": "老师联系家长沟通问题", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    
+    # 品德与行为问题
+    {"id": 81, "name": "乱发脾气", "icon": "frown", "color": "#EF4444", "habit_type": "daily_multi", "points": -3, "description": "无缘无故发脾气", "status": "active", "created_at": "2024-01-01T00:00:00", "max_checkins": 3},
+    {"id": 82, "name": "和长辈顶嘴", "icon": "alert-circle", "color": "#EF4444", "habit_type": "daily_multi", "points": -5, "description": "和长辈顶嘴不听话", "status": "active", "created_at": "2024-01-01T00:00:00", "max_checkins": 3},
+    {"id": 83, "name": "说脏话", "icon": "alert-triangle", "color": "#DC2626", "habit_type": "daily_multi", "points": -2, "description": "说脏话、骂人", "status": "active", "created_at": "2024-01-01T00:00:00", "max_checkins": 3},
+    {"id": 84, "name": "无故哭闹", "icon": "alert-triangle", "color": "#F97316", "habit_type": "daily_multi", "points": -3, "description": "无缘无故哭闹", "status": "active", "created_at": "2024-01-01T00:00:00", "max_checkins": 3},
+    {"id": 85, "name": "撒谎、屡教不改", "icon": "x-octagon", "color": "#B91C1C", "habit_type": "daily_once", "points": -10, "description": "撒谎并且屡教不改", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    
+    # 其他不良行为
+    {"id": 86, "name": "与同学发生冲突", "icon": "users", "color": "#EF4444", "habit_type": "daily_once", "points": -5, "description": "与同学打架或吵架", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    {"id": 87, "name": "沉迷于电子游戏", "icon": "monitor", "color": "#DC2626", "habit_type": "daily_once", "points": -5, "description": "过度玩游戏影响学习", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    {"id": 88, "name": "不按时完成作业", "icon": "clock", "color": "#F97316", "habit_type": "daily_once", "points": -3, "description": "作业拖延不按时完成", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    {"id": 89, "name": "课堂纪律问题", "icon": "volume-x", "color": "#DC2626", "habit_type": "daily_once", "points": -2, "description": "上课说话、走神等", "status": "active", "created_at": "2024-01-01T00:00:00"},
+    {"id": 90, "name": "损坏公共物品", "icon": "tool", "color": "#B91C1C", "habit_type": "daily_once", "points": -5, "description": "故意损坏公物或他人物品", "status": "active", "created_at": "2024-01-01T00:00:00"}
 ]
 
 MOCK_CHECKINS = []
@@ -158,7 +275,7 @@ class MockAPIHandler(http.server.SimpleHTTPRequestHandler):
             self.send_json_response({
                 "success": True,
                 "data": {
-                    "name": "打卡助手 Pro API (测试模式)",
+                    "name": "松鼠打卡 API (测试模式)",
                     "version": "1.0.0-test",
                     "endpoints": ["/api/auth", "/api/habits", "/api/checkins", "/api/analytics", "/api/logs"]
                 }
@@ -172,7 +289,9 @@ class MockAPIHandler(http.server.SimpleHTTPRequestHandler):
         
         # ========== 认证模块 ==========
         if path == '/api/auth/profile':
-            self.send_json_response({"success": True, "data": MOCK_USER})
+            user = MOCK_USER.copy()
+            user['total_points'] = MOCK_USER_POINTS
+            self.send_json_response({"success": True, "data": user})
             return
         
         # ========== 习惯模块 ==========
@@ -258,12 +377,14 @@ class MockAPIHandler(http.server.SimpleHTTPRequestHandler):
         
         if path == '/api/checkins/stats/overview':
             today = get_beijing_date_str()
-            today_checkins = len([c for c in MOCK_CHECKINS if c['checkin_date'] == today])
+            today_checkins_list = [c for c in MOCK_CHECKINS if c['checkin_date'] == today]
+            today_checkins = len(today_checkins_list)
+            today_points = sum(c.get('points_earned', 0) for c in today_checkins_list)
             
             self.send_json_response({
                 "success": True,
                 "data": {
-                    "today": {"habits_completed": today_checkins, "points": today_checkins * 2},
+                    "today": {"habits_completed": today_checkins, "points": today_points},
                     "this_week": {"checkins": 21, "points": 45},
                     "this_month": {"checkins": 85, "points": 180},
                     "total": len(MOCK_CHECKINS),
@@ -577,6 +698,9 @@ class MockAPIHandler(http.server.SimpleHTTPRequestHandler):
             }
             MOCK_CHECKINS.insert(0, new_checkin)
             
+            global MOCK_USER_POINTS
+            MOCK_USER_POINTS += points
+            
             self.send_json_response({
                 "success": True,
                 "data": {
@@ -614,6 +738,9 @@ class MockAPIHandler(http.server.SimpleHTTPRequestHandler):
             }
             MOCK_CHECKINS.insert(0, new_checkin)
             
+            global MOCK_USER_POINTS
+            MOCK_USER_POINTS += habit['points']
+            
             self.send_json_response({
                 "success": True,
                 "data": new_checkin,
@@ -621,8 +748,165 @@ class MockAPIHandler(http.server.SimpleHTTPRequestHandler):
             }, 201)
             return
         
+        # ========== AI学习计划生成 ==========
+        if path == '/api/ai/generate-study-plans':
+            prompt = data.get('prompt', '')
+            hours = data.get('hours', 2)
+            style = data.get('style', 'balanced')
+            
+            if not prompt:
+                self.send_json_response({"success": False, "message": "请输入学习目标"}, 400)
+                return
+            
+            try:
+                # 调用KIM API生成学习计划
+                generated_plans = self.call_kim_api(prompt, hours, style)
+                
+                self.send_json_response({
+                    "success": True,
+                    "data": generated_plans,
+                    "message": "学习计划生成成功"
+                })
+            except Exception as e:
+                print(f"AI生成失败: {e}")
+                # 如果API调用失败，使用模拟数据
+                fallback_plans = self.generate_mock_study_plans(prompt, hours, style)
+                self.send_json_response({
+                    "success": True,
+                    "data": fallback_plans,
+                    "message": "学习计划生成成功（模拟模式）"
+                })
+            return
+        
         # 404
         self.send_json_response({"success": False, "message": "API not found"}, 404)
+    
+    def call_kim_api(self, prompt, hours, style):
+        """调用KIM大模型API生成学习计划"""
+        # KIM API配置 - 使用Moonshot API
+        KIM_API_KEY = os.environ.get('KIMI_API_KEY', '')
+        KIM_API_URL = 'https://api.moonshot.cn/v1/chat/completions'
+        
+        # 构建系统提示词
+        system_prompt = '''你是一个专业的学习规划助手。请根据用户的需求，生成合理的学习计划。
+要求：
+1. 每个计划包含：name（任务名称）、time（预计时间，分钟）、subject（学科/类别）
+2. 总时间应控制在用户可用时间范围内
+3. 任务要具体、可执行
+4. 返回JSON数组格式，如：[{"name": "数学公式复习", "time": 30, "subject": "数学"}]
+5. 不要添加任何解释，只返回JSON数组'''
+        
+        # 构建用户提示词
+        style_desc = {
+            'intensive': '紧凑高效',
+            'relaxed': '轻松舒适',
+            'balanced': '均衡适中'
+        }.get(style, '均衡适中')
+        
+        user_prompt = f'''请为我生成学习计划。
+学习目标：{prompt}
+可用时间：{hours}小时
+学习风格：{style_desc}
+
+请返回JSON数组格式，每个元素包含name、time、subject字段。'''
+        
+        # 如果没有配置API Key，使用模拟数据
+        if not KIM_API_KEY:
+            print("未配置KIMI_API_KEY环境变量，使用模拟数据")
+            return self.generate_mock_study_plans(prompt, hours, style)
+        
+        # 构建请求
+        request_body = {
+            'model': 'moonshot-v1-8k',
+            'messages': [
+                {'role': 'system', 'content': system_prompt},
+                {'role': 'user', 'content': user_prompt}
+            ],
+            'temperature': 0.7,
+            'response_format': {'type': 'json_object'}
+        }
+        
+        # 发送请求
+        req = urllib.request.Request(
+            KIM_API_URL,
+            data=json.dumps(request_body).encode('utf-8'),
+            headers={
+                'Content-Type': 'application/json',
+                'Authorization': f'Bearer {KIM_API_KEY}'
+            },
+            method='POST'
+        )
+        
+        # 创建SSL上下文（忽略证书验证）
+        ssl_context = ssl.create_default_context()
+        ssl_context.check_hostname = False
+        ssl_context.verify_mode = ssl.CERT_NONE
+        
+        with urllib.request.urlopen(req, context=ssl_context, timeout=30) as response:
+            result = json.loads(response.read().decode('utf-8'))
+            content = result['choices'][0]['message']['content']
+            # 解析JSON响应
+            plans = json.loads(content)
+            if isinstance(plans, dict) and 'plans' in plans:
+                plans = plans['plans']
+            return plans
+    
+    def generate_mock_study_plans(self, prompt, hours, style):
+        """生成模拟学习计划（API失败时备用）"""
+        total_minutes = hours * 60
+        plans = []
+        
+        # 根据关键词生成相关计划
+        if '数学' in prompt or 'math' in prompt.lower():
+            plans = [
+                {'name': '数学公式复习', 'time': round(total_minutes * 0.25), 'subject': '数学'},
+                {'name': '数学例题练习', 'time': round(total_minutes * 0.35), 'subject': '数学'},
+                {'name': '数学错题整理', 'time': round(total_minutes * 0.25), 'subject': '数学'},
+                {'name': '数学模拟测试', 'time': round(total_minutes * 0.15), 'subject': '数学'}
+            ]
+        elif '英语' in prompt or 'english' in prompt.lower():
+            plans = [
+                {'name': '英语单词背诵', 'time': round(total_minutes * 0.3), 'subject': '英语'},
+                {'name': '英语听力练习', 'time': round(total_minutes * 0.25), 'subject': '英语'},
+                {'name': '英语阅读理解', 'time': round(total_minutes * 0.25), 'subject': '英语'},
+                {'name': '英语写作练习', 'time': round(total_minutes * 0.2), 'subject': '英语'}
+            ]
+        elif '语文' in prompt or 'chinese' in prompt.lower():
+            plans = [
+                {'name': '语文课文朗读', 'time': round(total_minutes * 0.2), 'subject': '语文'},
+                {'name': '语文古诗词背诵', 'time': round(total_minutes * 0.25), 'subject': '语文'},
+                {'name': '语文阅读理解', 'time': round(total_minutes * 0.3), 'subject': '语文'},
+                {'name': '语文作文练习', 'time': round(total_minutes * 0.25), 'subject': '语文'}
+            ]
+        elif '物理' in prompt or '化学' in prompt or '生物' in prompt:
+            subject = '物理' if '物理' in prompt else '化学' if '化学' in prompt else '生物'
+            plans = [
+                {'name': f'{subject}概念梳理', 'time': round(total_minutes * 0.3), 'subject': subject},
+                {'name': f'{subject}公式推导', 'time': round(total_minutes * 0.25), 'subject': subject},
+                {'name': f'{subject}实验题练习', 'time': round(total_minutes * 0.25), 'subject': subject},
+                {'name': f'{subject}综合测试', 'time': round(total_minutes * 0.2), 'subject': subject}
+            ]
+        else:
+            # 通用计划
+            count = 4 if style == 'intensive' else 3 if style == 'relaxed' else 4
+            time_per_plan = round(total_minutes / count)
+            plans = [
+                {'name': '知识点复习', 'time': time_per_plan, 'subject': '综合'},
+                {'name': '练习题完成', 'time': time_per_plan, 'subject': '综合'},
+                {'name': '错题整理', 'time': time_per_plan, 'subject': '综合'}
+            ]
+            if count == 4:
+                plans.append({'name': '模拟测试', 'time': time_per_plan, 'subject': '综合'})
+        
+        # 根据风格调整时间
+        if style == 'intensive':
+            for p in plans:
+                p['time'] = round(p['time'] * 0.9)
+        elif style == 'relaxed':
+            for p in plans:
+                p['time'] = round(p['time'] * 1.1)
+        
+        return plans
     
     def do_PUT(self):
         """处理PUT请求"""
@@ -705,8 +989,12 @@ class MockAPIHandler(http.server.SimpleHTTPRequestHandler):
         match = re.match(r'^/api/checkins/(\d+)$', path)
         if match:
             checkin_id = int(match.group(1))
+            checkin = next((c for c in MOCK_CHECKINS if c['id'] == checkin_id), None)
             global MOCK_CHECKINS
             MOCK_CHECKINS = [c for c in MOCK_CHECKINS if c['id'] != checkin_id]
+            if checkin:
+                global MOCK_USER_POINTS
+                MOCK_USER_POINTS -= checkin.get('points_earned', 0)
             self.send_json_response({"success": True, "message": "打卡已取消"})
             return
         
@@ -718,8 +1006,14 @@ class MockAPIHandler(http.server.SimpleHTTPRequestHandler):
         self.send_json_response({"success": False, "message": "API not found"}, 404)
 
 def main():
+    import sys
+    import io
+    # 设置输出编码
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+    
     print("=" * 60)
-    print("   打卡助手 Pro - 测试服务器")
+    print("   松鼠打卡 - 测试服务器")
     print("=" * 60)
     print(f"\n启动测试服务器...")
     print(f"访问地址: http://localhost:{PORT}")
@@ -731,6 +1025,7 @@ def main():
     print("  - 习惯管理 (增删改查)")
     print("  - 打卡功能 (打卡/补打卡/取消)")
     print("  - 数据分析仪表盘")
+    print("  - AI学习计划生成 (NEW)")
     print("  - 日志查询 (系统日志/登录日志)")
     print("  - 用户管理 (资料修改/密码修改)")
     print("\n按 Ctrl+C 停止服务器")

@@ -16,6 +16,7 @@ const habitRoutes = require('./routes/habits');
 const checkinRoutes = require('./routes/checkins');
 const analyticsRoutes = require('./routes/analytics');
 const logRoutes = require('./routes/logs');
+const pointsRoutes = require('./routes/points');
 
 // 创建应用实例
 const app = express();
@@ -56,11 +57,12 @@ app.use('/api/habits', habitRoutes);
 app.use('/api/checkins', checkinRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/logs', logRoutes);
+app.use('/api/points', pointsRoutes);
 
 // API根路径
 app.get('/api', (req, res) => {
     response.success(res, {
-        name: '打卡助手 Pro API',
+        name: '松鼠打卡 API',
         version: '1.0.0',
         description: '本地化Web测试版本API',
         endpoints: {
@@ -103,6 +105,10 @@ app.get('/logs', (req, res) => {
     res.sendFile(path.join(__dirname, '..', 'public', 'pages', 'logs.html'));
 });
 
+app.get('/points', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
+});
+
 // 404处理
 app.use(notFoundHandler);
 
@@ -112,7 +118,7 @@ app.use(errorHandler);
 // 启动服务器
 app.listen(PORT, () => {
     console.log('========================================');
-    console.log('    打卡助手 Pro - 本地化Web测试版本');
+    console.log('    松鼠打卡 - 本地化Web测试版本');
     console.log('========================================');
     console.log(`\n✓ 服务启动成功！`);
     console.log(`\n访问地址：`);

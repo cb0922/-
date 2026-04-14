@@ -1,11 +1,11 @@
 // ============================================
-// 小打卡 Pro - 主JavaScript文件
+// 松鼠打卡 - 主JavaScript文件
 // ============================================
 
 // 全局状态
 let currentUser = null;
 let habits = [];
-let currentDate = API.utils.getBeijingTime();
+let currentDate = new Date(); // 临时值，DOMContentLoaded中会更新
 let checkins = []; // 打卡记录
 let currentEditingHabitId = null; // 当前编辑的习惯ID
 let selectedIcon = 'star';
@@ -15,6 +15,42 @@ let selectedColor = '#4A7BF7';
 let studyPlans = []; // 学习计划列表
 let todayStudyTime = 0; // 今日学习时间（分钟）
 let todaySportTime = 0; // 今日运动时间（分钟）
+
+// ============================================
+// 积分本地缓存引擎（后端为主要数据源）
+// ============================================
+const POINTS_KEY = 'starBalance';
+const HISTORY_KEY = 'pointsHistory';
+
+function getStarBalance() {
+    const val = localStorage.getItem(POINTS_KEY);
+    return val === null ? (currentUser?.total_points || 0) : parseInt(val, 10);
+}
+function setStarBalance(val) {
+    localStorage.setItem(POINTS_KEY, Math.max(0, val));
+}
+function getPointsHistory() {
+    try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'); } catch(e) { return []; }
+}
+function addPointsRecord(type, amount, source, description) {
+    const history = getPointsHistory();
+    const balance = getStarBalance() + (type === 'earn' ? amount : -amount);
+    setStarBalance(balance);
+    history.unshift({
+        id: Date.now() + Math.random(),
+        type,
+        amount,
+        source,
+        description,
+        date: API.utils.getBeijingISOString(),
+        balanceAfter: balance
+    });
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(0, 200)));
+    return balance;
+}
+function calculateStudyPlanStars(minutes) {
+    return Math.max(1, Math.ceil(minutes / 30));
+}
 
 // 习惯分类映射（用于统计学习时间/运动时间）
 const HABIT_CATEGORIES = {
@@ -42,6 +78,29 @@ const ICONS_SVG = {
     file: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline>',
     calendar: '<rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line>',
     clock: '<circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline>',
+    // 新增图标
+    user: '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle>',
+    headphones: '<path d="M3 18v-6a9 9 0 0 1 18 0v6"></path><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path>',
+    droplet: '<path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>',
+    box: '<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line>',
+    home: '<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline>',
+    smile: '<circle cx="12" cy="12" r="10"></circle><path d="M8 14s1.5 2 4 2 4-2 4-2"></path><line x1="9" y1="9" x2="9.01" y2="9"></line><line x1="15" y1="9" x2="15.01" y2="9"></line>',
+    volume: '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>',
+    lightbulb: '<path d="M9 18h6"></path><path d="M10 22h4"></path><path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7z"></path>',
+    shield: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>',
+    // 减分习惯图标
+    'alert-circle': '<circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line>',
+    'x-circle': '<circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line>',
+    'alert-triangle': '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line>',
+    'x-square': '<rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="9" x2="15" y2="15"></line><line x1="15" y1="9" x2="9" y2="15"></line>',
+    'trash-2': '<polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line>',
+    'x-octagon': '<polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"></polygon><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line>',
+    'phone-missed': '<line x1="23" y1="1" x2="17" y2="7"></line><line x1="17" y1="1" x2="23" y2="7"></line><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>',
+    frown: '<circle cx="12" cy="12" r="10"></circle><path d="M16 16s-1.5-2-4-2-4 2-4 2"></path><line x1="9" y1="9" x2="9.01" y2="9"></line><line x1="15" y1="9" x2="15.01" y2="9"></line>',
+    users: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path>',
+    monitor: '<rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line>',
+    'volume-x': '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line>',
+    tool: '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>',
     default: '<circle cx="12" cy="12" r="10"></circle><path d="M12 8v4l3 3"></path>'
 };
 
@@ -49,6 +108,13 @@ const ICONS_SVG = {
 // 初始化
 // ============================================
 document.addEventListener('DOMContentLoaded', async function() {
+    // 初始化北京时间
+    currentDate = API.utils.getBeijingTime();
+    
+    // 启动时间更新
+    updateTimeDisplay();
+    setInterval(updateTimeDisplay, 1000);
+    
     // 检查登录状态
     if (!API.utils.isLoggedIn()) {
         window.location.href = '/login';
@@ -121,20 +187,23 @@ function logout() {
 }
 
 function goToDashboard() {
-    window.location.href = '/dashboard';
+    window.location.href = '/pages/dashboard.html';
 }
 
 function goToLogs() {
-    window.location.href = '/logs';
+    window.location.href = '/pages/logs.html';
 }
 
 // ============================================
 // 习惯管理
 // ============================================
 async function loadHabits() {
+
     try {
         const response = await API.habits.getList({ status: 'active' });
+
         habits = response.data.list || [];
+
         
         // 更新习惯列表UI
         renderHabitList();
@@ -148,8 +217,12 @@ async function loadHabits() {
 }
 
 function renderHabitList() {
+
     const container = document.querySelector('.habit-cards');
-    if (!container) return;
+    if (!container) {
+
+        return;
+    }
     
     if (habits.length === 0) {
         container.innerHTML = `
@@ -170,7 +243,10 @@ function renderHabitList() {
         return;
     }
     
-    container.innerHTML = habits.map(habit => `
+    try {
+        container.innerHTML = habits.map(habit => {
+            try {
+                return `
         <div class="habit-card" data-id="${habit.id}">
             <div class="habit-card-header">
                 <div class="habit-icon" style="background: ${habit.color};">
@@ -186,18 +262,47 @@ function renderHabitList() {
             <div class="habit-card-footer">
                 <div class="habit-meta">
                     <span class="habit-type">${getHabitTypeText(habit.habit_type)}</span>
-                    <span class="habit-points">+${habit.points}⭐</span>
+                    <span class="habit-points" style="color: ${habit.points < 0 ? '#EF4444' : '#22C55E'}">${habit.points > 0 ? '+' : ''}${habit.points}⭐</span>
                 </div>
-                <button class="btn-checkin" onclick="checkinHabit(${habit.id})" ${isCheckedInToday(habit.id) ? 'disabled' : ''}>
-                    ${isCheckedInToday(habit.id) ? '已打卡' : '打卡'}
+                <button class="btn-checkin" onclick="checkinHabit(${habit.id})" ${isCheckedInToday(habit.id) ? 'disabled' : ''} style="${habit.points < 0 ? 'background: linear-gradient(135deg, #F87171, #EF4444);' : ''}">
+                    ${isCheckedInToday(habit.id) ? '已打卡' : (habit.points < 0 ? '记录' : '打卡')}
                 </button>
             </div>
-        </div>
-    `).join('');
+        </div>`;
+            } catch (e) {
+
+                return '';
+            }
+        }).join('');
+    } catch (e) {
+
+    }
+    
+
+    if (habits.length > 0) {
+
+    }
+    
+    // 添加事件委托
+    container.onclick = function(e) {
+        const btn = e.target.closest('.btn-checkin');
+        if (btn && !btn.disabled) {
+            const card = btn.closest('.habit-card');
+            if (card) {
+                const habitId = parseInt(card.dataset.id);
+
+                checkinHabit(habitId);
+            }
+        }
+    };
 }
 
 function getIconSvg(icon) {
-    return ICONS_SVG[icon] || ICONS_SVG.default;
+    if (!icon || !ICONS_SVG[icon]) {
+
+        return ICONS_SVG.default;
+    }
+    return ICONS_SVG[icon];
 }
 
 function getHabitTypeText(type) {
@@ -245,10 +350,13 @@ async function checkinHabit(habitId) {
     try {
         const response = await API.checkins.checkin(habitId);
         const points = response.data.points_earned || 0;
+        
+        // 积分记录
+        const habit = habits.find(h => h.id === habitId);
+        addPointsRecord('earn', points, 'habit', `习惯打卡：${habit ? habit.name : ''}`);
         showToast(`打卡成功！+${points}⭐`);
         
         // 立即更新本地打卡记录（用于实时统计）
-        const habit = habits.find(h => h.id === habitId);
         if (habit) {
             checkins.push({
                 id: Date.now(),
@@ -278,8 +386,11 @@ async function checkinHabit(habitId) {
 // 补打卡功能
 async function makeupCheckin(habitId, date) {
     try {
-        await API.checkins.makeup(habitId, date);
-        showToast('补打卡成功！');
+        const response = await API.checkins.makeup(habitId, date);
+        const points = response.data.points_earned || 0;
+        const habit = habits.find(h => h.id === habitId);
+        addPointsRecord('earn', points, 'habit', `补打卡：${habit ? habit.name : ''}`);
+        showToast(`补打卡成功！+${points}⭐`);
         
         // 刷新数据
         await loadCheckins();
@@ -300,7 +411,12 @@ async function cancelCheckin(checkinId) {
     }
     
     try {
+        const checkin = checkins.find(c => c.id === checkinId);
+        const points = checkin ? (checkin.points_earned || 0) : 0;
         await API.checkins.cancel(checkinId);
+        if (points > 0) {
+            addPointsRecord('spend', points, 'habit', '取消打卡扣除');
+        }
         showToast('打卡已取消');
         
         // 刷新数据
@@ -816,6 +932,26 @@ function renderHabitListWithManage() {
 }
 
 // ============================================
+// 时间显示
+// ============================================
+function updateTimeDisplay() {
+    const now = API.utils.getBeijingTime();
+    const timeStr = now.toLocaleString('zh-CN', { 
+        year: 'numeric', 
+        month: '2-digit', 
+        day: '2-digit', 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        second: '2-digit',
+        hour12: false 
+    });
+    
+    // 更新页面上的时间显示
+    const timeElements = document.querySelectorAll('.beijing-time');
+    timeElements.forEach(el => el.textContent = timeStr);
+}
+
+// ============================================
 // 页面初始化
 // ============================================
 function initPage() {
@@ -990,11 +1126,34 @@ function showToast(message, type = 'success') {
 // ============================================
 // Tab切换
 function switchTab(tabName) {
+    // 隐藏积分成就页面
+    const pointsPage = document.getElementById('pointsPage');
+    if (pointsPage) {
+        pointsPage.classList.remove('active');
+    }
+    
+    // 隐藏宠物页面
+    const petPage = document.getElementById('petPage');
+    if (petPage) {
+        petPage.style.display = 'none';
+        petPage.classList.remove('active');
+    }
+    
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
     
     document.querySelector(`.tab-btn[data-tab="${tabName}"]`)?.classList.add('active');
     document.getElementById(`${tabName}Tab`)?.classList.add('active');
+    
+    // 滚动到内容区域顶部
+    setTimeout(() => {
+        const tabHeader = document.querySelector('.tab-header');
+        if (tabHeader) {
+            const rect = tabHeader.getBoundingClientRect();
+            const scrollTop = window.pageYOffset + rect.top - 80;
+            window.scrollTo({ top: scrollTop, behavior: 'smooth' });
+        }
+    }, 100);
 }
 
 // ============================================
@@ -1141,14 +1300,17 @@ function toggleStudyPlan(planId) {
     if (!plan) return;
     
     plan.completed = !plan.completed;
+    const stars = calculateStudyPlanStars(plan.estimatedTime);
     
     if (plan.completed) {
-        // 完成计划，增加学习时间
+        // 完成计划，增加学习时间和星星
         todayStudyTime += plan.estimatedTime;
-        showToast(`完成计划！学习时间 +${plan.estimatedTime}分钟`);
+        addPointsRecord('earn', stars, 'study', `完成学习计划：${plan.name}`);
+        showToast(`完成计划！学习时间 +${plan.estimatedTime}分钟，+${stars}⭐`);
     } else {
-        // 取消完成，减少学习时间
+        // 取消完成，减少学习时间和星星
         todayStudyTime = Math.max(0, todayStudyTime - plan.estimatedTime);
+        addPointsRecord('spend', stars, 'study', `取消完成学习计划：${plan.name}`);
     }
     
     saveStudyPlans();
@@ -1165,8 +1327,10 @@ function deleteStudyPlan(planId) {
     
     const plan = studyPlans.find(p => p.id === planId);
     if (plan && plan.completed) {
-        // 如果已完成，减少学习时间
+        // 如果已完成，减少学习时间和星星
         todayStudyTime = Math.max(0, todayStudyTime - plan.estimatedTime);
+        const stars = calculateStudyPlanStars(plan.estimatedTime);
+        addPointsRecord('spend', stars, 'study', `删除已完成学习计划：${plan.name}`);
     }
     
     studyPlans = studyPlans.filter(p => p.id !== planId);
@@ -1331,9 +1495,8 @@ async function showPointsPage() {
     if (pointsPage) {
         pointsPage.classList.add('active');
         document.body.style.overflow = 'hidden';
-        
-        // 加载用户积分数据
         await loadUserPointsData();
+        await renderWishList();
     }
 }
 
@@ -1347,19 +1510,267 @@ function hidePointsPage() {
 
 async function loadUserPointsData() {
     try {
-        // 获取用户统计数据
-        const response = await API.checkins.getStats();
-        const stats = response.data;
+        const response = await API.points.getOverview();
+        const data = response.data;
         
-        // 更新积分显示（如果有相关元素）
-        const totalPointsEl = document.getElementById('totalPointsDisplay');
-        if (totalPointsEl && stats.user) {
-            totalPointsEl.textContent = stats.user.total_points || 0;
+        const balanceEl = document.getElementById('pointsBalance');
+        const weekEl = document.getElementById('pointsWeek');
+        const monthEl = document.getElementById('pointsMonth');
+        
+        if (balanceEl) balanceEl.textContent = data.balance || 0;
+        if (weekEl) weekEl.textContent = data.week_earned || 0;
+        if (monthEl) monthEl.textContent = data.month_earned || 0;
+        
+        if (currentUser) {
+            currentUser.total_points = data.balance || 0;
         }
-        
     } catch (error) {
         console.error('加载积分数据失败:', error);
     }
+}
+
+// ============================================
+// 愿望清单
+// ============================================
+async function renderWishList() {
+    const container = document.getElementById('wishesList');
+    if (!container) return;
+    
+    try {
+        const response = await API.points.getWishes();
+        const wishes = response.data || [];
+        const sortType = document.getElementById('wishSort')?.value || 'default';
+        
+        // 排序
+        if (sortType === 'cost_asc') wishes.sort((a, b) => a.cost - b.cost);
+        else if (sortType === 'cost_desc') wishes.sort((a, b) => b.cost - a.cost);
+        else if (sortType === 'created_desc') wishes.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        
+        if (wishes.length === 0) {
+            container.innerHTML = `
+                <div class="wish-empty-state">
+                    <div class="wish-empty-icon">🎁</div>
+                    <h4 class="wish-empty-title">还没有添加愿望</h4>
+                    <p class="wish-empty-desc">点击"添加愿望"按钮，添加你想要的奖励吧！</p>
+                    <button class="btn-add-first-wish" onclick="showAddWishModal()">
+                        <span style="margin-right: 4px;">+</span> 添加第一个愿望
+                    </button>
+                </div>
+            `;
+            return;
+        }
+        
+        const balance = currentUser?.total_points || 0;
+        
+        container.innerHTML = wishes.map(wish => `
+            <div class="wish-item ${wish.status === 'redeemed' ? 'redeemed' : ''}">
+                <div class="wish-icon">${wish.status === 'redeemed' ? '✅' : '🎁'}</div>
+                <div class="wish-info">
+                    <div class="wish-name">${escapeHtml(wish.title)} ${wish.status === 'redeemed' ? '<span class="redeemed-badge">已兑换</span>' : ''}</div>
+                    <div class="wish-desc">${escapeHtml(wish.description || '')}</div>
+                </div>
+                <div class="wish-cost">${wish.cost}⭐</div>
+                <div class="wish-actions">
+                    ${wish.status !== 'redeemed' ? `
+                        <button class="btn-redeem-wish" ${balance < wish.cost ? 'disabled' : ''} onclick="redeemWish(${wish.id})">兑换</button>
+                        <button class="btn-edit-wish" onclick="editWish(${wish.id})">编辑</button>
+                    ` : ''}
+                    <button class="btn-delete-wish" onclick="deleteWish(${wish.id})">删除</button>
+                </div>
+            </div>
+        `).join('');
+    } catch (error) {
+        console.error('加载愿望清单失败:', error);
+        container.innerHTML = '<p style="text-align:center;color:#EF4444;padding:20px;">加载失败，请重试</p>';
+    }
+}
+
+function showAddWishModal() {
+    document.getElementById('wishModalTitle').textContent = '添加愿望';
+    document.getElementById('wishEditId').value = '';
+    document.getElementById('wishTitle').value = '';
+    document.getElementById('wishDesc').value = '';
+    document.getElementById('wishCost').value = 10;
+    document.getElementById('wishModal').classList.add('active');
+}
+
+function closeWishModal() {
+    document.getElementById('wishModal').classList.remove('active');
+}
+
+function editWish(id) {
+    // 从当前渲染的列表中找
+    // 由于我们每次都重新请求，这里简单处理：先查找DOM或者重新请求
+    API.points.getWishes().then(res => {
+        const wish = res.data.find(w => w.id === id);
+        if (!wish) return;
+        document.getElementById('wishModalTitle').textContent = '编辑愿望';
+        document.getElementById('wishEditId').value = wish.id;
+        document.getElementById('wishTitle').value = wish.title;
+        document.getElementById('wishDesc').value = wish.description || '';
+        document.getElementById('wishCost').value = wish.cost;
+        document.getElementById('wishModal').classList.add('active');
+    });
+}
+
+async function saveWish() {
+    const id = document.getElementById('wishEditId').value;
+    const title = document.getElementById('wishTitle').value.trim();
+    const description = document.getElementById('wishDesc').value.trim();
+    const cost = parseInt(document.getElementById('wishCost').value, 10);
+    
+    if (!title) {
+        showToast('请输入愿望名称', 'error');
+        return;
+    }
+    if (!cost || cost < 1) {
+        showToast('所需星星至少为1', 'error');
+        return;
+    }
+    
+    try {
+        if (id) {
+            await API.points.updateWish(id, { title, description, cost });
+            showToast('愿望更新成功');
+        } else {
+            await API.points.createWish({ title, description, cost });
+            showToast('愿望添加成功');
+        }
+        closeWishModal();
+        await renderWishList();
+    } catch (error) {
+        showToast(error.message || '保存失败', 'error');
+    }
+}
+
+async function deleteWish(id) {
+    if (!confirm('确定要删除这个愿望吗？')) return;
+    try {
+        await API.points.deleteWish(id);
+        showToast('愿望已删除');
+        await renderWishList();
+    } catch (error) {
+        showToast(error.message || '删除失败', 'error');
+    }
+}
+
+async function redeemWish(id) {
+    try {
+        await API.points.redeemWish(id);
+        showToast('愿望兑换成功！');
+        await loadUserPointsData();
+        await renderWishList();
+        await loadUserInfo();
+    } catch (error) {
+        showToast(error.message || '兑换失败', 'error');
+    }
+}
+
+// ============================================
+// 成就系统
+// ============================================
+async function showAchievementsModal() {
+    document.getElementById('achievementsModal').classList.add('active');
+    await renderAchievements();
+}
+
+function closeAchievementsModal() {
+    document.getElementById('achievementsModal').classList.remove('active');
+}
+
+async function renderAchievements() {
+    const container = document.getElementById('achievementsGrid');
+    if (!container) return;
+    
+    try {
+        const response = await API.points.getAchievements();
+        const achievements = response.data || [];
+        
+        container.innerHTML = achievements.map(ach => {
+            const isLocked = !ach.unlocked;
+            const isClaimed = ach.claimed;
+            return `
+                <div class="achievement-item ${isLocked ? 'locked' : (isClaimed ? 'claimed' : 'unlocked')}">
+                    <div class="achievement-icon">${ach.icon || '🏅'}</div>
+                    <div class="achievement-name">${escapeHtml(ach.name)}</div>
+                    <div class="achievement-desc">${escapeHtml(ach.description)}</div>
+                    <div class="achievement-reward">+${ach.reward_points}⭐</div>
+                    ${!isLocked && !isClaimed ? `
+                        <button class="btn-claim-achievement" onclick="claimAchievement(${ach.id})">领取奖励</button>
+                    ` : `
+                        <div class="achievement-status">${isClaimed ? '已领取' : '未解锁'}</div>
+                    `}
+                </div>
+            `;
+        }).join('');
+    } catch (error) {
+        console.error('加载成就失败:', error);
+        container.innerHTML = '<p style="text-align:center;color:#EF4444;">加载失败</p>';
+    }
+}
+
+async function claimAchievement(id) {
+    try {
+        const res = await API.points.claimAchievement(id);
+        showToast(res.message || '领取成功！');
+        await renderAchievements();
+        await loadUserPointsData();
+        await loadUserInfo();
+    } catch (error) {
+        showToast(error.message || '领取失败', 'error');
+    }
+}
+
+// ============================================
+// 积分历史
+// ============================================
+async function showHistoryModal() {
+    document.getElementById('historyModal').classList.add('active');
+    await renderHistory();
+}
+
+function closeHistoryModal() {
+    document.getElementById('historyModal').classList.remove('active');
+}
+
+async function renderHistory() {
+    const container = document.getElementById('historyList');
+    const emptyEl = document.getElementById('historyEmpty');
+    if (!container) return;
+    
+    try {
+        const response = await API.points.getHistory({ page: 1, pageSize: 50 });
+        const list = response.data.list || [];
+        
+        if (list.length === 0) {
+            container.innerHTML = '';
+            emptyEl.style.display = 'block';
+            return;
+        }
+        
+        emptyEl.style.display = 'none';
+        container.innerHTML = list.map(item => `
+            <div class="history-item">
+                <div class="history-info">
+                    <div class="history-desc">${escapeHtml(item.description || item.source || '')}</div>
+                    <div class="history-date">${new Date(item.created_at).toLocaleString('zh-CN')}</div>
+                </div>
+                <div class="history-points ${item.type === 'earn' ? 'earn' : 'spend'}">
+                    ${item.type === 'earn' ? '+' : ''}${item.points}⭐
+                </div>
+            </div>
+        `).join('');
+    } catch (error) {
+        console.error('加载历史失败:', error);
+        container.innerHTML = '<p style="text-align:center;color:#EF4444;">加载失败</p>';
+    }
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 function redeemCode() {
@@ -1811,170 +2222,22 @@ function showBatchEditModal() {
 // ============================================
 // 电子宠物系统
 // ============================================
-let petData = {
-    name: '小星星',
-    level: 1,
-    exp: 0,
-    maxExp: 100,
-    hunger: 80,
-    happiness: 80,
-    energy: 80,
-    cleanliness: 80,
-    lastFeedTime: Date.now(),
-    lastPlayTime: Date.now(),
-    lastCleanTime: Date.now(),
-    isSleeping: false
+let currentPet = null;
+
+const PET_EMOJIS = {
+    cat: '🐱',
+    dog: '🐶',
+    rabbit: '🐰',
+    bird: '🦜'
 };
 
+// 初始化宠物系统
 function initPetSystem() {
-    // 从本地存储加载宠物数据
-    const saved = localStorage.getItem('petData');
-    if (saved) {
-        petData = { ...petData, ...JSON.parse(saved) };
-    }
-    
-    // 更新宠物状态（随时间衰减）
-    updatePetStatus();
-    
-    // 每分钟更新一次
-    setInterval(updatePetStatus, 60000);
-}
-
-function updatePetStatus() {
-    const now = Date.now();
-    
-    // 饥饿度衰减（每小时5点）
-    const hoursSinceFeed = (now - petData.lastFeedTime) / (1000 * 60 * 60);
-    petData.hunger = Math.max(0, 100 - hoursSinceFeed * 5);
-    
-    // 心情衰减（每小时3点）
-    const hoursSincePlay = (now - petData.lastPlayTime) / (1000 * 60 * 60);
-    petData.happiness = Math.max(0, 100 - hoursSincePlay * 3);
-    
-    // 清洁度衰减（每小时4点）
-    const hoursSinceClean = (now - petData.lastCleanTime) / (1000 * 60 * 60);
-    petData.cleanliness = Math.max(0, 100 - hoursSinceClean * 4);
-    
-    // 精力恢复（如果睡觉）
-    if (petData.isSleeping) {
-        petData.energy = Math.min(100, petData.energy + 10);
-    } else {
-        // 精力自然衰减
-        petData.energy = Math.max(0, petData.energy - 1);
-    }
-    
-    savePetData();
-}
-
-function savePetData() {
-    localStorage.setItem('petData', JSON.stringify(petData));
-}
-
-// 喂食
-async function feedPet() {
-    const userPoints = currentUser?.total_points || 0;
-    const feedCost = 1;
-    
-    if (userPoints < feedCost) {
-        showToast('星星积分不足，快去打卡赚积分吧！', 'error');
-        return;
-    }
-    
-    if (petData.hunger >= 100) {
-        showToast('宠物已经很饱了！', 'info');
-        return;
-    }
-    
-    try {
-        // 扣除积分
-        // await API.points.spend(feedCost, 'feed_pet', '喂食宠物');
-        
-        petData.hunger = Math.min(100, petData.hunger + 20);
-        petData.lastFeedTime = Date.now();
-        petData.exp += 10;
-        
-        // 更新用户积分显示
-        if (currentUser) {
-            currentUser.total_points = userPoints - feedCost;
-            updateStatCard('积分成就', currentUser.total_points + '⭐');
-        }
-        
-        checkLevelUp();
-        savePetData();
-        updatePetPage();
-        
-        showToast('喂食成功！饱食度+20，经验+10');
-    } catch (error) {
-        showToast('喂食失败', 'error');
-    }
-}
-
-// 玩耍
-function playWithPet() {
-    if (petData.energy < 20) {
-        showToast('宠物精力不足，需要休息或睡觉', 'error');
-        return;
-    }
-    
-    if (petData.isSleeping) {
-        showToast('宠物正在睡觉，请稍后再玩', 'error');
-        return;
-    }
-    
-    petData.happiness = Math.min(100, petData.happiness + 15);
-    petData.energy = Math.max(0, petData.energy - 20);
-    petData.lastPlayTime = Date.now();
-    petData.exp += 15;
-    
-    checkLevelUp();
-    savePetData();
-    updatePetPage();
-    
-    showToast('玩耍成功！心情+15，经验+15');
-}
-
-// 清洁
-function cleanPet() {
-    petData.cleanliness = Math.min(100, petData.cleanliness + 30);
-    petData.lastCleanTime = Date.now();
-    petData.exp += 5;
-    
-    checkLevelUp();
-    savePetData();
-    updatePetPage();
-    
-    showToast('清洁成功！清洁度+30，经验+5');
-}
-
-// 睡觉/醒来
-function toggleSleep() {
-    petData.isSleeping = !petData.isSleeping;
-    savePetData();
-    updatePetPage();
-    
-    showToast(petData.isSleeping ? '宠物开始睡觉了 💤' : '宠物醒来了！☀️');
-}
-
-// 检查升级
-function checkLevelUp() {
-    if (petData.exp >= petData.maxExp) {
-        petData.level++;
-        petData.exp = petData.exp - petData.maxExp;
-        petData.maxExp = Math.floor(petData.maxExp * 1.5);
-        
-        // 升级奖励
-        showToast(`🎉 恭喜！宠物升级到 Lv.${petData.level}！奖励50⭐`);
-        
-        // 可以添加升级奖励逻辑
-        if (currentUser) {
-            currentUser.total_points = (currentUser.total_points || 0) + 50;
-            updateStatCard('积分成就', currentUser.total_points + '⭐');
-        }
-    }
+    // 不需要每分钟更新，页面打开时从后端获取即可
 }
 
 // 显示电子宠物页面
-function showPetPage() {
+async function showPetPage() {
     let page = document.getElementById('petPage');
     if (!page) {
         page = createPetPage();
@@ -1983,7 +2246,19 @@ function showPetPage() {
     page.style.display = 'block';
     page.classList.add('active');
     document.body.style.overflow = 'hidden';
-    updatePetPage();
+    
+    // 加载宠物数据
+    await loadPetData();
+}
+
+async function loadPetData() {
+    try {
+        const res = await API.points.getPet();
+        currentPet = res.data;
+        renderPetPage();
+    } catch (error) {
+        console.error('加载宠物失败:', error);
+    }
 }
 
 function createPetPage() {
@@ -1993,114 +2268,19 @@ function createPetPage() {
     page.style.cssText = `
         position: fixed;
         top: 0;
-        left: 0;
+        left: 220px;
         right: 0;
         bottom: 0;
-        background: #F0F2F5;
-        z-index: 1000;
+        background: linear-gradient(180deg, #F5F7FA 0%, #F0F4F8 100%);
+        z-index: 200;
         display: none;
         overflow-y: auto;
     `;
     
     page.innerHTML = `
-        <div class="pet-page-container">
-            <header style="background: linear-gradient(135deg, #F59E0B 0%, #F97316 100%); padding: 60px 20px 30px; position: relative;">
-                <button onclick="hidePetPage()" style="position: absolute; top: 20px; left: 20px; background: rgba(255,255,255,0.2); border: none; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; color: white;">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="15 18 9 12 15 6"></polyline>
-                    </svg>
-                </button>
-                <h1 style="color: white; font-size: 24px; font-weight: 600; text-align: center;">我的电子宠物</h1>
-            </header>
-            
-            <div style="padding: 20px; max-width: 600px; margin: 0 auto;">
-                <!-- 宠物形象 -->
-                <div style="text-align: center; margin-bottom: 30px;">
-                    <div id="petCharacter" style="font-size: 100px; margin-bottom: 16px; animation: ${petData.isSleeping ? 'none' : 'bounce 2s infinite'};">🐱</div>
-                    <div style="display: inline-block; background: #FEF3C7; color: #92400E; padding: 4px 16px; border-radius: 20px; font-size: 14px; font-weight: 500; margin-bottom: 8px;">
-                        Lv.<span id="petLevel">1</span>
-                    </div>
-                    <h2 id="petName" style="font-size: 24px; font-weight: 600; color: #1F2937; margin-bottom: 12px;">小星星</h2>
-                    
-                    <!-- 经验条 -->
-                    <div style="background: #E5E7EB; height: 12px; border-radius: 6px; overflow: hidden; max-width: 300px; margin: 0 auto 8px;">
-                        <div id="expFill" style="background: linear-gradient(90deg, #F59E0B, #F97316); height: 100%; width: 0%; transition: width 0.3s;"></div>
-                    </div>
-                    <p style="font-size: 12px; color: #6B7280;">EXP: <span id="petExp">0</span> / <span id="petMaxExp">100</span></p>
-                </div>
-                
-                <!-- 状态条 -->
-                <div style="background: white; border-radius: 16px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-                    <div style="margin-bottom: 16px;">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-                            <span style="font-size: 14px; color: #374151;">🍖 饱食度</span>
-                            <span id="hungerValue" style="font-size: 14px; color: #6B7280;">80%</span>
-                        </div>
-                        <div style="background: #E5E7EB; height: 8px; border-radius: 4px; overflow: hidden;">
-                            <div id="hungerFill" style="background: #22C55E; height: 100%; width: 80%; transition: width 0.3s;"></div>
-                        </div>
-                    </div>
-                    
-                    <div style="margin-bottom: 16px;">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-                            <span style="font-size: 14px; color: #374151;">😊 心情</span>
-                            <span id="happinessValue" style="font-size: 14px; color: #6B7280;">80%</span>
-                        </div>
-                        <div style="background: #E5E7EB; height: 8px; border-radius: 4px; overflow: hidden;">
-                            <div id="happinessFill" style="background: #F59E0B; height: 100%; width: 80%; transition: width 0.3s;"></div>
-                        </div>
-                    </div>
-                    
-                    <div style="margin-bottom: 16px;">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-                            <span style="font-size: 14px; color: #374151;">⚡ 精力</span>
-                            <span id="energyValue" style="font-size: 14px; color: #6B7280;">80%</span>
-                        </div>
-                        <div style="background: #E5E7EB; height: 8px; border-radius: 4px; overflow: hidden;">
-                            <div id="energyFill" style="background: #3B82F6; height: 100%; width: 80%; transition: width 0.3s;"></div>
-                        </div>
-                    </div>
-                    
-                    <div>
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-                            <span style="font-size: 14px; color: #374151;">✨ 清洁</span>
-                            <span id="cleanlinessValue" style="font-size: 14px; color: #6B7280;">80%</span>
-                        </div>
-                        <div style="background: #E5E7EB; height: 8px; border-radius: 4px; overflow: hidden;">
-                            <div id="cleanlinessFill" style="background: #8B5CF6; height: 100%; width: 80%; transition: width 0.3s;"></div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- 操作按钮 -->
-                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px;">
-                    <button onclick="feedPet()" style="background: linear-gradient(135deg, #22C55E, #16A34A); color: white; border: none; padding: 16px; border-radius: 12px; font-size: 16px; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                        <span>🍖</span> 喂食 (-1⭐)
-                    </button>
-                    <button onclick="playWithPet()" style="background: linear-gradient(135deg, #F59E0B, #F97316); color: white; border: none; padding: 16px; border-radius: 12px; font-size: 16px; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                        <span>🎮</span> 玩耍
-                    </button>
-                    <button onclick="cleanPet()" style="background: linear-gradient(135deg, #8B5CF6, #7C3AED); color: white; border: none; padding: 16px; border-radius: 12px; font-size: 16px; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                        <span>🛁</span> 清洁
-                    </button>
-                    <button onclick="toggleSleep()" style="background: linear-gradient(135deg, #3B82F6, #2563EB); color: white; border: none; padding: 16px; border-radius: 12px; font-size: 16px; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                        <span id="sleepBtnIcon">💤</span> <span id="sleepBtnText">睡觉</span>
-                    </button>
-                </div>
-                
-                <!-- 提示 -->
-                <div style="background: #FEF3C7; border-radius: 12px; padding: 16px; color: #92400E; font-size: 14px; line-height: 1.6;">
-                    <p style="margin-bottom: 8px;"><strong>💡 小贴士：</strong></p>
-                    <ul style="margin-left: 16px;">
-                        <li>每天记得喂食，保持宠物饱食度</li>
-                        <li>和宠物玩耍可以提升心情</li>
-                        <li>宠物升级可以获得星星奖励</li>
-                        <li>宠物睡觉时精力恢复更快</li>
-                    </ul>
-                </div>
-            </div>
+        <div class="pet-page-container" id="petPageContainer">
+            <!-- 内容由 renderPetPage 动态填充 -->
         </div>
-        
         <style>
             @keyframes bounce {
                 0%, 100% { transform: translateY(0); }
@@ -2111,47 +2291,252 @@ function createPetPage() {
     return page;
 }
 
-function updatePetPage() {
-    const levelEl = document.getElementById('petLevel');
-    const expEl = document.getElementById('petExp');
-    const maxExpEl = document.getElementById('petMaxExp');
-    const expFill = document.getElementById('expFill');
-    const hungerFill = document.getElementById('hungerFill');
-    const hungerValue = document.getElementById('hungerValue');
-    const happinessFill = document.getElementById('happinessFill');
-    const happinessValue = document.getElementById('happinessValue');
-    const energyFill = document.getElementById('energyFill');
-    const energyValue = document.getElementById('energyValue');
-    const cleanlinessFill = document.getElementById('cleanlinessFill');
-    const cleanlinessValue = document.getElementById('cleanlinessValue');
-    const character = document.getElementById('petCharacter');
-    const sleepBtnText = document.getElementById('sleepBtnText');
-    const sleepBtnIcon = document.getElementById('sleepBtnIcon');
+function renderPetPage() {
+    const container = document.getElementById('petPageContainer');
+    if (!container) return;
     
-    if (levelEl) levelEl.textContent = petData.level;
-    if (expEl) expEl.textContent = petData.exp;
-    if (maxExpEl) maxExpEl.textContent = petData.maxExp;
-    if (expFill) expFill.style.width = (petData.exp / petData.maxExp * 100) + '%';
-    
-    if (hungerFill) hungerFill.style.width = petData.hunger + '%';
-    if (hungerValue) hungerValue.textContent = Math.round(petData.hunger) + '%';
-    
-    if (happinessFill) happinessFill.style.width = petData.happiness + '%';
-    if (happinessValue) happinessValue.textContent = Math.round(petData.happiness) + '%';
-    
-    if (energyFill) energyFill.style.width = petData.energy + '%';
-    if (energyValue) energyValue.textContent = Math.round(petData.energy) + '%';
-    
-    if (cleanlinessFill) cleanlinessFill.style.width = petData.cleanliness + '%';
-    if (cleanlinessValue) cleanlinessValue.textContent = Math.round(petData.cleanliness) + '%';
-    
-    if (character) {
-        character.textContent = petData.isSleeping ? '😴' : '🐱';
-        character.style.animation = petData.isSleeping ? 'none' : 'bounce 2s infinite';
+    if (!currentPet) {
+        // 领养页面
+        container.innerHTML = `
+            <header style="background: linear-gradient(135deg, #F59E0B 0%, #F97316 50%, #EA580C 100%); padding: 30px 40px; position: relative; overflow: hidden;">
+                <div style="position: relative; z-index: 1;">
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                        <button onclick="hidePetPage()" style="background: rgba(255,255,255,0.2); border: none; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; color: white; flex-shrink: 0;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="15 18 9 12 15 6"></polyline>
+                            </svg>
+                        </button>
+                        <h1 style="color: white; font-size: 24px; font-weight: 700; text-shadow: 0 2px 4px rgba(0,0,0,0.1);">领养电子宠物</h1>
+                    </div>
+                    <p style="color: rgba(255,255,255,0.9); font-size: 14px; margin-left: 48px;">选择一只小伙伴，陪伴你一起学习成长</p>
+                </div>
+            </header>
+            <div style="padding: 20px; max-width: 600px; margin: 0 auto;">
+                <div style="text-align: center; margin-bottom: 30px;">
+                    <div style="font-size: 80px; margin-bottom: 16px;">🐾</div>
+                    <h2 style="font-size: 20px; font-weight: 600; color: #1F2937; margin-bottom: 8px;">你还没有宠物</h2>
+                    <p style="color: #6B7280; font-size: 14px;">领养一只电子宠物，用星星照顾它一起成长吧！</p>
+                </div>
+                
+                <div style="background: white; border-radius: 16px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                    <div class="form-group" style="margin-bottom: 16px;">
+                        <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;">宠物名字</label>
+                        <input type="text" id="adoptPetName" class="form-input" placeholder="例如：小星星" style="width: 100%;">
+                    </div>
+                    <div class="form-group">
+                        <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 12px;">选择宠物</label>
+                        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
+                            <div class="pet-select-item" data-type="cat" onclick="selectPetType('cat')" style="text-align: center; padding: 16px; border: 2px solid #F59E0B; border-radius: 12px; cursor: pointer; background: #FFFBEB;">
+                                <div style="font-size: 36px; margin-bottom: 4px;">🐱</div>
+                                <div style="font-size: 13px; color: #374151;">小猫</div>
+                            </div>
+                            <div class="pet-select-item" data-type="dog" onclick="selectPetType('dog')" style="text-align: center; padding: 16px; border: 2px solid #E5E7EB; border-radius: 12px; cursor: pointer;">
+                                <div style="font-size: 36px; margin-bottom: 4px;">🐶</div>
+                                <div style="font-size: 13px; color: #374151;">小狗</div>
+                            </div>
+                            <div class="pet-select-item" data-type="rabbit" onclick="selectPetType('rabbit')" style="text-align: center; padding: 16px; border: 2px solid #E5E7EB; border-radius: 12px; cursor: pointer;">
+                                <div style="font-size: 36px; margin-bottom: 4px;">🐰</div>
+                                <div style="font-size: 13px; color: #374151;">小兔</div>
+                            </div>
+                            <div class="pet-select-item" data-type="bird" onclick="selectPetType('bird')" style="text-align: center; padding: 16px; border: 2px solid #E5E7EB; border-radius: 12px; cursor: pointer;">
+                                <div style="font-size: 36px; margin-bottom: 4px;">🦜</div>
+                                <div style="font-size: 13px; color: #374151;">小鸟</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <button onclick="adoptPet()" style="width: 100%; padding: 16px; background: linear-gradient(135deg, #F59E0B, #D97706); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 500; cursor: pointer;">
+                    立即领养
+                </button>
+            </div>
+        `;
+        window.selectedPetType = 'cat';
+        return;
     }
     
-    if (sleepBtnText) sleepBtnText.textContent = petData.isSleeping ? '醒来' : '睡觉';
-    if (sleepBtnIcon) sleepBtnIcon.textContent = petData.isSleeping ? '☀️' : '💤';
+    const emoji = PET_EMOJIS[currentPet.type] || '🐱';
+    const isSleeping = currentPet.is_sleeping;
+    
+    container.innerHTML = `
+        <header style="background: linear-gradient(135deg, #F59E0B 0%, #F97316 50%, #EA580C 100%); padding: 30px 40px; position: relative; overflow: hidden;">
+            <div style="position: relative; z-index: 1;">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                    <button onclick="hidePetPage()" style="background: rgba(255,255,255,0.2); border: none; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; color: white; flex-shrink: 0;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="15 18 9 12 15 6"></polyline>
+                        </svg>
+                    </button>
+                    <h1 style="color: white; font-size: 24px; font-weight: 700; text-shadow: 0 2px 4px rgba(0,0,0,0.1);">我的电子宠物</h1>
+                </div>
+                <p style="color: rgba(255,255,255,0.9); font-size: 14px; margin-left: 48px;">照顾你的宠物，让它健康成长</p>
+            </div>
+        </header>
+        
+        <div style="padding: 20px; max-width: 600px; margin: 0 auto;">
+            <div style="text-align: center; margin-bottom: 30px;">
+                <div id="petCharacter" style="font-size: 100px; margin-bottom: 16px; animation: ${isSleeping ? 'none' : 'bounce 2s infinite'};">${isSleeping ? '😴' : emoji}</div>
+                <div style="display: inline-block; background: #FEF3C7; color: #92400E; padding: 4px 16px; border-radius: 20px; font-size: 14px; font-weight: 500; margin-bottom: 8px;">
+                    Lv.<span id="petLevel">${currentPet.level}</span>
+                </div>
+                <h2 id="petName" style="font-size: 24px; font-weight: 600; color: #1F2937; margin-bottom: 12px;">${escapeHtml(currentPet.name)}</h2>
+                
+                <div style="background: #E5E7EB; height: 12px; border-radius: 6px; overflow: hidden; max-width: 300px; margin: 0 auto 8px;">
+                    <div id="expFill" style="background: linear-gradient(90deg, #F59E0B, #F97316); height: 100%; width: ${(currentPet.exp / currentPet.max_exp * 100)}%; transition: width 0.3s;"></div>
+                </div>
+                <p style="font-size: 12px; color: #6B7280;">EXP: <span id="petExp">${currentPet.exp}</span> / <span id="petMaxExp">${currentPet.max_exp}</span></p>
+            </div>
+            
+            <div style="background: white; border-radius: 16px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                <div style="margin-bottom: 16px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                        <span style="font-size: 14px; color: #374151;">🍖 饱食度</span>
+                        <span style="font-size: 14px; color: #6B7280;">${Math.round(currentPet.hunger)}%</span>
+                    </div>
+                    <div style="background: #E5E7EB; height: 8px; border-radius: 4px; overflow: hidden;">
+                        <div style="background: #22C55E; height: 100%; width: ${currentPet.hunger}%; transition: width 0.3s;"></div>
+                    </div>
+                </div>
+                <div style="margin-bottom: 16px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                        <span style="font-size: 14px; color: #374151;">😊 心情</span>
+                        <span style="font-size: 14px; color: #6B7280;">${Math.round(currentPet.happiness)}%</span>
+                    </div>
+                    <div style="background: #E5E7EB; height: 8px; border-radius: 4px; overflow: hidden;">
+                        <div style="background: #F59E0B; height: 100%; width: ${currentPet.happiness}%; transition: width 0.3s;"></div>
+                    </div>
+                </div>
+                <div style="margin-bottom: 16px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                        <span style="font-size: 14px; color: #374151;">⚡ 精力</span>
+                        <span style="font-size: 14px; color: #6B7280;">${Math.round(currentPet.energy)}%</span>
+                    </div>
+                    <div style="background: #E5E7EB; height: 8px; border-radius: 4px; overflow: hidden;">
+                        <div style="background: #3B82F6; height: 100%; width: ${currentPet.energy}%; transition: width 0.3s;"></div>
+                    </div>
+                </div>
+                <div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                        <span style="font-size: 14px; color: #374151;">✨ 清洁</span>
+                        <span style="font-size: 14px; color: #6B7280;">${Math.round(currentPet.cleanliness)}%</span>
+                    </div>
+                    <div style="background: #E5E7EB; height: 8px; border-radius: 4px; overflow: hidden;">
+                        <div style="background: #8B5CF6; height: 100%; width: ${currentPet.cleanliness}%; transition: width 0.3s;"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px;">
+                <button onclick="feedPet()" style="background: linear-gradient(135deg, #22C55E, #16A34A); color: white; border: none; padding: 16px; border-radius: 12px; font-size: 16px; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <span>🍖</span> 喂食 (-1⭐)
+                </button>
+                <button onclick="playWithPet()" style="background: linear-gradient(135deg, #F59E0B, #F97316); color: white; border: none; padding: 16px; border-radius: 12px; font-size: 16px; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <span>🎮</span> 玩耍
+                </button>
+                <button onclick="cleanPet()" style="background: linear-gradient(135deg, #8B5CF6, #7C3AED); color: white; border: none; padding: 16px; border-radius: 12px; font-size: 16px; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <span>🛁</span> 清洁
+                </button>
+                <button onclick="toggleSleep()" style="background: linear-gradient(135deg, #3B82F6, #2563EB); color: white; border: none; padding: 16px; border-radius: 12px; font-size: 16px; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <span>${isSleeping ? '☀️' : '💤'}</span> ${isSleeping ? '醒来' : '睡觉'}
+                </button>
+            </div>
+            
+            <div style="background: #FEF3C7; border-radius: 12px; padding: 16px; color: #92400E; font-size: 14px; line-height: 1.6;">
+                <p style="margin-bottom: 8px;"><strong>💡 小贴士：</strong></p>
+                <ul style="margin-left: 16px;">
+                    <li>每天记得喂食，保持宠物饱食度</li>
+                    <li>和宠物玩耍可以提升心情</li>
+                    <li>宠物升级可以获得星星奖励</li>
+                    <li>宠物睡觉时精力恢复更快</li>
+                </ul>
+            </div>
+        </div>
+    `;
+}
+
+function selectPetType(type) {
+    window.selectedPetType = type;
+    document.querySelectorAll('.pet-select-item').forEach(el => {
+        if (el.dataset.type === type) {
+            el.style.borderColor = '#F59E0B';
+            el.style.background = '#FFFBEB';
+        } else {
+            el.style.borderColor = '#E5E7EB';
+            el.style.background = 'white';
+        }
+    });
+}
+
+async function adoptPet() {
+    const name = document.getElementById('adoptPetName')?.value.trim();
+    if (!name) {
+        showToast('请给宠物取个名字', 'error');
+        return;
+    }
+    try {
+        await API.points.adoptPet({ name, type: window.selectedPetType || 'cat' });
+        showToast('领养成功！');
+        await loadPetData();
+        await loadUserInfo();
+    } catch (error) {
+        showToast(error.message || '领养失败', 'error');
+    }
+}
+
+async function feedPet() {
+    try {
+        const res = await API.points.feedPet();
+        showToast(res.message || '喂食成功！');
+        currentPet = res.data.pet;
+        if (res.data.level_up) {
+            showToast(`🎉 宠物升级到 Lv.${res.data.new_level}！奖励${res.data.bonus}⭐`, 'success');
+        }
+        renderPetPage();
+        await loadUserInfo();
+    } catch (error) {
+        showToast(error.message || '喂食失败', 'error');
+    }
+}
+
+async function playWithPet() {
+    try {
+        const res = await API.points.playWithPet();
+        showToast(res.message || '玩耍成功！');
+        currentPet = res.data.pet;
+        if (res.data.level_up) {
+            showToast(`🎉 宠物升级到 Lv.${res.data.new_level}！奖励${res.data.bonus}⭐`, 'success');
+        }
+        renderPetPage();
+        await loadUserInfo();
+    } catch (error) {
+        showToast(error.message || '玩耍失败', 'error');
+    }
+}
+
+async function cleanPet() {
+    try {
+        const res = await API.points.cleanPet();
+        showToast(res.message || '清洁成功！');
+        currentPet = res.data.pet;
+        if (res.data.level_up) {
+            showToast(`🎉 宠物升级到 Lv.${res.data.new_level}！奖励${res.data.bonus}⭐`, 'success');
+        }
+        renderPetPage();
+        await loadUserInfo();
+    } catch (error) {
+        showToast(error.message || '清洁失败', 'error');
+    }
+}
+
+async function toggleSleep() {
+    try {
+        const res = await API.points.toggleSleep();
+        showToast(res.message || '操作成功');
+        currentPet = res.data;
+        renderPetPage();
+    } catch (error) {
+        showToast(error.message || '操作失败', 'error');
+    }
 }
 
 function hidePetPage() {

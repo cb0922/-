@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-打卡助手 Pro - API功能测试脚本
+松鼠打卡 - API功能测试脚本
 """
 
 import sys
@@ -46,7 +46,7 @@ API_TESTS = [
 def test_all_apis():
     """打印所有需要测试的API"""
     print("=" * 70)
-    print("   打卡助手 Pro - API功能清单")
+    print("   松鼠打卡 - API功能清单")
     print("=" * 70)
     
     modules = {

@@ -246,6 +246,34 @@ const analyticsAPI = {
     getPoints: (params = {}) => get('/api/analytics/points', params)
 };
 
+// ==================== 积分/愿望/成就/宠物 API ====================
+const pointsAPI = {
+    // 积分概览
+    getOverview: () => get('/api/points/overview'),
+    
+    // 积分历史
+    getHistory: (params = {}) => get('/api/points/history', params),
+    
+    // 愿望清单
+    getWishes: (status) => get('/api/points/wishes', status ? { status } : {}),
+    createWish: (data) => post('/api/points/wishes', data),
+    updateWish: (id, data) => put(`/api/points/wishes/${id}`, data),
+    deleteWish: (id) => del(`/api/points/wishes/${id}`),
+    redeemWish: (id) => post(`/api/points/wishes/${id}/redeem`),
+    
+    // 成就系统
+    getAchievements: () => get('/api/points/achievements'),
+    claimAchievement: (id) => post(`/api/points/achievements/${id}/claim`),
+    
+    // 宠物系统
+    getPet: () => get('/api/points/pet'),
+    adoptPet: (data) => post('/api/points/pet/adopt', data),
+    feedPet: () => post('/api/points/pet/feed'),
+    playWithPet: () => post('/api/points/pet/play'),
+    cleanPet: () => post('/api/points/pet/clean'),
+    toggleSleep: () => post('/api/points/pet/sleep')
+};
+
 // ==================== 日志API ====================
 const logsAPI = {
     // 获取系统日志
@@ -267,6 +295,7 @@ window.API = {
     habits: habitsAPI,
     checkins: checkinsAPI,
     analytics: analyticsAPI,
+    points: pointsAPI,
     logs: logsAPI,
     utils: {
         getToken,

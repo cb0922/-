@@ -578,21 +578,47 @@ async function generateAIPlans() {
     document.getElementById('aiGenerateBtn').disabled = true;
     
     try {
-        // TODO: 调用KIM API
-        // const response = await callKIMAPI(prompt, hours, style);
+        // 调用后端API生成学习计划
+        const token = localStorage.getItem('token') || '';
+        const response = await fetch(`${API_BASE_URL}/ai/generate-study-plans`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                prompt: prompt,
+                hours: hours,
+                style: style
+            })
+        });
         
-        // 模拟AI响应（延迟1.5秒模拟思考过程）
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
         
-        // 模拟生成的计划
-        const generatedPlans = simulateAIResponse(prompt, hours, style);
+        const result = await response.json();
         
-        // 显示结果
-        displayAIResults(generatedPlans);
+        if (result.success) {
+            // 显示生成的计划
+            displayAIResults(result.data);
+            showToast(result.message || '学习计划生成成功', 'success');
+        } else {
+            throw new Error(result.message || '生成失败');
+        }
         
     } catch (error) {
-        showToast('AI生成失败，请重试', 'error');
         console.error('AI生成错误:', error);
+        showToast('AI生成失败: ' + error.message, 'error');
+        
+        // 如果API调用失败，使用本地模拟数据作为备用
+        try {
+            const fallbackPlans = simulateAIResponse(prompt, hours, style);
+            displayAIResults(fallbackPlans);
+            showToast('已使用本地模拟数据', 'warning');
+        } catch (e) {
+            console.error('备用生成也失败:', e);
+        }
     } finally {
         document.getElementById('aiLoading').style.display = 'none';
         document.getElementById('aiGenerateBtn').disabled = false;

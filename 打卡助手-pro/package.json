@@ -1,7 +1,7 @@
 {
-  "name": "打卡助手-pro",
+  "name": "松鼠打卡",
   "version": "1.0.0",
-  "description": "本地化Web测试版本 - 具有完整用户数据库和数据分析面板的学习打卡助手",
+  "description": "本地化Web测试版本 - 具有完整用户数据库和数据分析面板的学习成长助手",
   "main": "server/app.js",
   "scripts": {
     "start": "node server/app.js",
